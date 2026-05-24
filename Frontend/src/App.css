@@ -1,0 +1,14 @@
+/* Global small overrides for application UI components.
+   Keep App.css minimal — all main styling lives under src/styles. */
+
+:root {
+  --primary-500: #0ea5e9;
+  --primary-700: #2563eb;
+  --muted: #64748b;
+  --card-border: #e2e8f0;
+}
+
+html, body, #root { height: 100%; }
+
+/* No sample/demo styles here — pages import their own CSS */
+

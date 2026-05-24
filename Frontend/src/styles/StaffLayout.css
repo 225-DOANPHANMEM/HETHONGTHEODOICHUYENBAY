@@ -1,0 +1,231 @@
+.staff-layout {
+  min-height: 100vh;
+  display: flex;
+  background: linear-gradient(135deg, #f8fafc 0%, #eef6ff 100%);
+  color: #0f172a;
+}
+
+.staff-layout__sidebar {
+  width: 280px;
+  min-height: 100vh;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 24px 18px;
+  color: #ffffff;
+  background: linear-gradient(180deg, #0f172a 0%, #1e3a8a 100%);
+}
+
+.staff-layout__brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 8px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.staff-layout__brand-icon {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: #ffffff;
+  color: #1d4ed8;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.staff-layout__brand-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.staff-layout__brand-subtitle {
+  margin: 4px 0 0;
+  color: #bfdbfe;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.staff-layout__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 24px 0;
+}
+
+.staff-layout__nav-link {
+  width: 100%;
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  color: #dbeafe;
+  background: transparent;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.staff-layout__nav-link:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.12);
+  transform: translateX(2px);
+}
+
+.staff-layout__nav-link--active {
+  color: #0f172a;
+  background: #ffffff;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.2);
+}
+
+.staff-layout__nav-icon {
+  width: 22px;
+  text-align: center;
+  font-size: 16px;
+}
+
+.staff-layout__sidebar-footer {
+  margin-top: auto;
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.staff-layout__footer-label {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.staff-layout__footer-status {
+  margin: 6px 0 14px;
+  color: #bfdbfe;
+  font-size: 13px;
+}
+
+.staff-layout__logout-button {
+  width: 100%;
+  min-height: 40px;
+  border: none;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #1d4ed8;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.staff-layout__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.staff-layout__header {
+  min-height: 84px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 0 32px;
+  border-bottom: 1px solid #dbeafe;
+  background: rgba(255, 255, 255, 0.86);
+  backdrop-filter: blur(16px);
+}
+
+.staff-layout__header-label {
+  margin: 0;
+  color: #0284c7;
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.staff-layout__header-title {
+  margin: 6px 0 0;
+  color: #0f172a;
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.staff-layout__user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px 8px 16px;
+  border: 1px solid #dbeafe;
+  border-radius: 999px;
+  background: #ffffff;
+}
+
+.staff-layout__user-info {
+  text-align: right;
+}
+
+.staff-layout__user-name {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.staff-layout__user-role {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.staff-layout__avatar {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0ea5e9, #2563eb);
+  color: #ffffff;
+  font-weight: 800;
+}
+
+.staff-layout__content {
+  flex: 1;
+  padding: 32px;
+}
+
+@media (max-width: 900px) {
+  .staff-layout {
+    flex-direction: column;
+  }
+
+  .staff-layout__sidebar {
+    width: 100%;
+    min-height: auto;
+  }
+
+  .staff-layout__nav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .staff-layout__sidebar-footer {
+    display: none;
+  }
+
+  .staff-layout__header {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 20px;
+  }
+
+  .staff-layout__content {
+    padding: 20px;
+  }
+}
