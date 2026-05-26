@@ -1,0 +1,113 @@
+.customer-layout {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f8fafc 0%, #eef6ff 50%, #e0f2fe 100%);
+  color: #0f172a;
+  font-family: "Inter", "Roboto", "Segoe UI", Arial, sans-serif;
+}
+
+.customer-layout__header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 18px 36px;
+  border-bottom: 1px solid rgba(191, 219, 254, 0.8);
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 8px 30px rgba(15, 23, 42, 0.06);
+}
+
+.customer-layout__brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.customer-layout__brand-icon {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 16px;
+  color: #fff;
+  background: linear-gradient(135deg, #0ea5e9, #2563eb);
+  font-size: 22px;
+}
+
+.customer-layout__brand h1 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.customer-layout__brand p {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.customer-layout__nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.customer-layout__nav-link {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  color: #475569;
+  background: transparent;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.customer-layout__nav-link:hover {
+  color: #1d4ed8;
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.customer-layout__nav-link--active {
+  color: #fff;
+  background: linear-gradient(135deg, #0ea5e9, #2563eb);
+  box-shadow: 0 12px 28px rgba(37, 99, 235, 0.18);
+}
+
+.customer-layout__main {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 32px 24px 56px;
+}
+
+@media (max-width: 860px) {
+  .customer-layout__header {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 16px 20px;
+  }
+
+  .customer-layout__nav {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .customer-layout__main {
+    padding: 24px 16px 44px;
+  }
+}
