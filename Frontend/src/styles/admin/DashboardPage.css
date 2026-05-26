@@ -1,0 +1,860 @@
+.dashboard-page {
+  width: 100%;
+}
+
+/* ============ Heading ============ */
+.dashboard-page__heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.dashboard-page__eyebrow {
+  margin: 0 0 8px;
+  color: #0284c7;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.dashboard-page__title {
+  margin: 0;
+  color: #0f172a;
+  font-size: 34px;
+  font-weight: 900;
+  line-height: 1.15;
+}
+
+.dashboard-page__description {
+  max-width: 680px;
+  margin: 12px 0 0;
+  color: #64748b;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.7;
+}
+
+.dashboard-page__primary-button {
+  min-width: 150px;
+  height: 44px;
+  padding: 0 18px;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  color: #ffffff;
+  background: linear-gradient(135deg, #0ea5e9, #2563eb);
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 12px 24px rgba(37, 99, 235, 0.18);
+  transition: opacity 0.22s ease, border-color 0.22s ease, transform 0.22s ease, box-shadow 0.22s ease;
+}
+
+.dashboard-page__primary-button:hover {
+  opacity: 0.86;
+  border-color: #38bdf8;
+  transform: translateY(-1px);
+  box-shadow: 0 16px 30px rgba(37, 99, 235, 0.24);
+}
+
+/* ============ Stats Grid (4x2) ============ */
+.dashboard-page__stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+  margin-bottom: 28px;
+}
+
+.dashboard-stat-card {
+  min-height: 160px;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 22px;
+  border: 1px solid #dbeafe;
+  border-radius: 22px;
+  background-color: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 16px 42px rgba(15, 23, 42, 0.06);
+  transition: all 0.22s ease;
+}
+
+.dashboard-stat-card:hover {
+  border-color: #38bdf8;
+  box-shadow: 0 20px 50px rgba(37, 99, 235, 0.1);
+  transform: translateY(-2px);
+}
+
+.dashboard-stat-card__icon {
+  width: 46px;
+  height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 46px;
+  border-radius: 16px;
+  background-color: #eff6ff;
+  font-size: 22px;
+}
+
+.dashboard-stat-card__icon i,
+.quick-action-card__icon i {
+  font-size: 18px;
+}
+
+.dashboard-icon--flight { color: #0369a1; }
+.dashboard-icon--arrival { color: #0f766e; }
+.dashboard-icon--departure { color: #1d4ed8; }
+.dashboard-icon--checkin { color: #0ea5e9; }
+.dashboard-icon--flying { color: #4338ca; }
+.dashboard-icon--delayed { color: #b45309; }
+.dashboard-icon--cancelled { color: #b91c1c; }
+.dashboard-icon--done { color: #15803d; }
+.dashboard-icon--gate { color: #0f766e; }
+.dashboard-icon--belt { color: #7c3aed; }
+.dashboard-icon--dispatch { color: #2563eb; }
+.dashboard-icon--users { color: #0284c7; }
+.dashboard-icon--report { color: #0891b2; }
+
+.dashboard-stat-card__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.dashboard-stat-card__label {
+  min-height: 40px;
+  margin: 0;
+  color: #475569;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.dashboard-stat-card__value {
+  margin: 10px 0 0;
+  color: #0f172a;
+  font-size: 34px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.dashboard-stat-card__description {
+  margin: 10px 0 0;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+/* ============ Status Statistics Section ============ */
+.dashboard-page__status-section {
+  margin-bottom: 28px;
+}
+
+.dashboard-status-list {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.dashboard-status-item {
+  min-height: 100px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 18px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  transition: all 0.22s ease;
+}
+
+.dashboard-status-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.1);
+}
+
+.dashboard-status-item__label {
+  color: #0f172a;
+  font-weight: 800;
+  font-size: 13px;
+  text-align: center;
+  line-height: 1.3;
+}
+
+.dashboard-status-item__count {
+  color: #0f172a;
+  font-weight: 900;
+  font-size: 28px;
+  line-height: 1;
+}
+
+/* ============ Main Content Grid (Attention Panel Full Width) ============ */
+.dashboard-page__content-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+  margin-top: 32px;
+  margin-bottom: 28px;
+}
+
+.dashboard-page__bottom-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(360px, 0.75fr);
+  gap: 28px;
+  margin-top: 28px;
+  align-items: stretch;
+}
+
+@media (max-width: 1100px) {
+  .dashboard-page__bottom-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============ Panel Base ============ */
+.dashboard-panel {
+  padding: 24px;
+  border: 1px solid #dbeafe;
+  border-radius: 24px;
+  background-color: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 16px 42px rgba(15, 23, 42, 0.06);
+}
+
+.dashboard-panel__header {
+  margin-bottom: 20px;
+}
+
+.dashboard-panel__title {
+  margin: 0;
+  color: #0f172a;
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.dashboard-panel__subtitle {
+  margin: 8px 0 0;
+  color: #64748b;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.6;
+}
+
+/* ============ Flight List ============ */
+.dashboard-flight-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dashboard-flight-card {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) 176px 120px 176px;
+  align-items: center;
+  gap: 14px;
+  min-height: 86px;
+  padding: 16px 22px;
+  border: 1px solid #e0f2fe;
+  border-radius: 18px;
+  background-color: #f8fafc;
+  transition:
+    border-color 0.22s ease,
+    background-color 0.22s ease,
+    transform 0.22s ease;
+}
+
+.dashboard-flight-card:hover {
+  border-color: #38bdf8;
+  background-color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.dashboard-flight-card__main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-flight-card__number {
+  margin: 0;
+  color: #0f172a;
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.dashboard-flight-card__route {
+  margin: 6px 0 0;
+  color: #64748b;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.dashboard-flight-card__info {
+  display: contents;
+}
+
+.dashboard-attention-table__hint {
+  margin: 10px 0 0;
+  color: #475569;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.dashboard-attention-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.dashboard-attention-table {
+  display: grid;
+  gap: 12px;
+}
+
+.dashboard-attention-table__header,
+.dashboard-attention-table__row {
+  display: grid;
+  grid-template-columns: minmax(130px, 1.05fr) minmax(120px, 0.9fr) minmax(130px, 0.9fr) minmax(145px, 0.9fr) minmax(160px, 1fr) minmax(130px, 0.85fr) minmax(100px, 0.65fr);
+  align-items: center;
+  gap: 12px;
+}
+
+.dashboard-attention-table__header {
+  min-height: 40px;
+  padding: 0 14px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin-bottom: 8px;
+}
+
+.dashboard-attention-table__row {
+  min-height: 74px;
+  padding: 12px 14px;
+  border: 1px solid #e0f2fe;
+  border-radius: 18px;
+  background-color: #f8fafc;
+}
+
+.dashboard-attention-table__flight {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.dashboard-attention-table__flight-number {
+  margin: 0;
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.dashboard-attention-table__route {
+  margin: 0;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.dashboard-attention-table__airline,
+.dashboard-attention-table__type,
+.dashboard-attention-table__warning {
+  color: #0f172a;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.dashboard-attention-table__schedule {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dashboard-attention-table__schedule-line,
+.dashboard-attention-table__delay {
+  margin: 0;
+  color: #475569;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.dashboard-attention-table__delay {
+  font-weight: 700;
+  color: #b91c1c;
+}
+
+/* Smaller attention panel modifier */
+.dashboard-panel--attention {
+  padding: 22px;
+}
+
+/* Plane icon replacing refresh button */
+.dashboard-page__plane-icon {
+  width: 54px;
+  height: 54px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 54px;
+  border: 1px solid #bfdbfe;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #e0f2fe, #dbeafe);
+  color: #0284c7;
+  font-size: 24px;
+  box-shadow: 0 12px 24px rgba(37, 99, 235, 0.12);
+  cursor: default;
+}
+
+.dashboard-page__plane-icon:hover {
+  border-color: #38bdf8;
+  transform: translateY(-1px);
+}
+
+.dashboard-attention-table__status,
+.dashboard-attention-table__infrastructure,
+.dashboard-attention-table__priority {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.dashboard-attention-table__infrastructure {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.dashboard-attention-table__chip,
+.dashboard-attention-table__priority {
+  height: 34px;
+  min-width: 118px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.dashboard-attention-table__chip {
+  color: #0f172a;
+  background-color: #eff6ff;
+}
+
+.dashboard-attention-table__chip--status {
+  min-width: 150px;
+  padding: 0 18px;
+}
+
+.dashboard-attention-table__priority {
+  min-width: 110px;
+  padding: 0 16px;
+}
+
+.dashboard-attention-table__chip--status {
+  color: #0f172a;
+  background-color: #e0f2fe;
+}
+
+.dashboard-attention-table__chip--status-delayed {
+  color: #991b1b;
+  background-color: #fee2e2;
+}
+
+.dashboard-attention-table__chip--status-checkin {
+  color: #1d4ed8;
+  background-color: #dbeafe;
+}
+
+.dashboard-attention-table__chip--status-landed {
+  color: #166534;
+  background-color: #dcfce7;
+}
+
+.dashboard-attention-table__chip--status-unassigned {
+  color: #92400e;
+  background-color: #fde68a;
+}
+
+.dashboard-attention-table__chip--status-cancelled {
+  color: #7c2d12;
+  background-color: #fecaca;
+}
+
+.dashboard-attention-table__chip--status-default {
+  color: #0f172a;
+  background-color: #e2e8f0;
+}
+
+.dashboard-attention-table__chip--priority-high {
+  color: #a21caf;
+  background-color: #f5d0fe;
+}
+
+.dashboard-attention-table__chip--priority-medium {
+  color: #92400e;
+  background-color: #fde68a;
+}
+
+.dashboard-attention-table__chip--priority-low {
+  color: #0f766e;
+  background-color: #d1fae5;
+}
+
+.dashboard-attention-table__chip--status,
+.dashboard-attention-table__chip--priority-high,
+.dashboard-attention-table__chip--priority-medium,
+.dashboard-attention-table__chip--priority-low {
+  font-weight: 800;
+}
+
+/* ============ Badge (Generic) ============ */
+.badge {
+  width: 100%;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 14px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.dashboard-flight-card__status {
+  color: #0369a1;
+  background-color: #e0f2fe;
+}
+
+.dashboard-flight-card__time {
+  color: #334155;
+  background-color: #f1f5f9;
+}
+
+.dashboard-flight-card__note {
+  color: #1e40af;
+  background-color: #dbeafe;
+}
+
+/* ============ Update List ============ */
+.dashboard-update-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dashboard-update-item {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  min-height: 74px;
+  padding: 14px 16px;
+  border: 1px solid #e0f2fe;
+  border-radius: 18px;
+  background-color: #f8fafc;
+  transition: all 0.22s ease;
+}
+
+.dashboard-update-item:hover {
+  border-color: #38bdf8;
+  background-color: #ffffff;
+}
+
+.dashboard-update-item__dot {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 12px;
+  margin-top: 4px;
+  border-radius: 50%;
+  background-color: #0ea5e9;
+  box-shadow: 0 0 0 6px rgba(14, 165, 233, 0.1);
+}
+
+.dashboard-update-item__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.dashboard-update-item__action {
+  margin: 0;
+  color: #334155;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.dashboard-update-item__meta {
+  margin: 6px 0 0;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* ============ Quick Access Section ============ */
+.dashboard-quick-access {
+  margin-bottom: 0;
+}
+
+.quick-access-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.quick-action-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  min-height: 132px;
+  height: 100%;
+  padding: 22px;
+  border: 1.5px solid #dbeafe;
+  border-radius: 18px;
+  background-color: #ffffff;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.22s ease;
+}
+
+.quick-action-card:hover {
+  border-color: #0ea5e9;
+  background-color: #f0f9ff;
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(14, 165, 233, 0.14);
+}
+
+.quick-action-card__icon {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #e0f2fe, #eff6ff);
+  font-size: 20px;
+}
+
+.quick-action-card__text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.quick-action-card__title {
+  margin: 0;
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.quick-action-card__desc {
+  margin: 0;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+/* ============ Responsive Design ============ */
+@media (max-width: 1400px) {
+  .dashboard-page__stats-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .quick-access-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1200px) {
+  .dashboard-page__stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dashboard-status-list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .dashboard-page__content-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .quick-access-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .quick-access-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 820px) {
+  .dashboard-page__heading {
+    flex-direction: column;
+  }
+
+  .dashboard-page__primary-button {
+    width: 100%;
+  }
+
+  .dashboard-page__stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .dashboard-stat-card {
+    min-height: 140px;
+    padding: 16px;
+  }
+
+  .dashboard-status-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .dashboard-status-item {
+    min-height: 90px;
+    padding: 16px 14px;
+  }
+
+  .quick-access-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .dashboard-page__heading {
+    flex-direction: column;
+  }
+
+  .dashboard-page__primary-button {
+    width: 100%;
+  }
+
+  .dashboard-page__stats-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .dashboard-stat-card {
+    min-height: 130px;
+    padding: 14px;
+    gap: 12px;
+  }
+
+  .dashboard-stat-card__icon {
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+  }
+
+  .dashboard-stat-card__value {
+    font-size: 28px;
+  }
+
+  .dashboard-status-list {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .dashboard-status-item {
+    min-height: 80px;
+    padding: 14px 12px;
+  }
+
+  .dashboard-status-item__count {
+    font-size: 24px;
+  }
+
+  .dashboard-flight-card,
+  .dashboard-update-item {
+    min-height: auto;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 12px 14px;
+  }
+
+.dashboard-flight-card__info {
+  display: contents;
+}
+
+  .badge {
+    min-width: 90px;
+    height: 32px;
+    font-size: 12px;
+    padding: 0 10px;
+  }
+
+  .dashboard-update-item__dot {
+    margin-top: 2px;
+  }
+
+  .quick-access-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .quick-action-card {
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    min-height: auto;
+    padding: 16px;
+  }
+
+  .quick-action-card__icon {
+    flex: 0 0 36px;
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
+  }
+
+  .quick-action-card__text {
+    flex: 1;
+  }
+
+  .quick-action-card__title {
+    font-size: 13px;
+  }
+
+  .quick-action-card__desc {
+    font-size: 12px;
+  }
+}
+.dashboard-flight-table__header {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) 176px 120px 176px;
+  align-items: center;
+  gap: 14px;
+  min-height: 42px;
+  margin: 4px 0 12px;
+  padding: 0 22px;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.dashboard-flight-table__header span:nth-child(2),
+.dashboard-flight-table__header span:nth-child(3),
+.dashboard-flight-table__header span:nth-child(4) {
+  text-align: center;
+}
