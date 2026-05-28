@@ -1,8 +1,8 @@
-com\danangairport\BackendApplication.class
 com\danangairport\controller\HealthController.class
 com\danangairport\service\AdminKiemTraService.class
+com\danangairport\config\CorsConfig.class
+com\danangairport\BackendApplication.class
 com\danangairport\controller\AdminKiemTraController.class
 com\danangairport\repository\ChuyenBayRepository.class
-com\danangairport\config\CorsConfig.class
 com\danangairport\dto\SoChuyenBayResponseDto.class
 com\danangairport\entity\package-info.class
