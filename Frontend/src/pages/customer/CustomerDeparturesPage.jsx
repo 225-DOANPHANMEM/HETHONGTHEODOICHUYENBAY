@@ -1,6 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { loadCustomerFlights, statusOptions } from "../../data/customerData.js";
+import { getFlights } from "../../api";
+import { mapApiFlightToCustomer } from "../../utils/flightMapper";
+import { statusOptions } from "../../data/customerData.js";
 import CustomerFlightTable from "./CustomerFlightTable.jsx";
 import "../../styles/customer/CustomerPages.css";
 
@@ -8,7 +10,19 @@ function CustomerDeparturesPage() {
   const navigate = useNavigate();
   const [keyword, setKeyword] = useState("");
   const [status, setStatus] = useState("ALL");
-  const flights = loadCustomerFlights().filter((item) => item.type === "DI");
+  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [flights, setFlights] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    setLoading(true);
+    setError("");
+    getFlights({ type: "Đi", date })
+      .then((data) => setFlights(data.map(mapApiFlightToCustomer)))
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, [date]);
 
   const filteredFlights = useMemo(() => {
     const search = keyword.toLowerCase().trim();
@@ -54,20 +68,35 @@ function CustomerDeparturesPage() {
         <input
           className="customer-input"
           type="date"
-          defaultValue="2026-05-01"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
         />
         <button
           className="customer-btn customer-btn--secondary"
-          onClick={() => {
-            setKeyword("");
-            setStatus("ALL");
-          }}
+          onClick={() => { setKeyword(""); setStatus("ALL"); }}
         >
           Làm mới
         </button>
       </div>
 
-      <CustomerFlightTable flights={filteredFlights} onNavigate={(page, id) => navigate(`/customer/${page === 'customerDetail' ? `flights/${id}` : page === 'customerArrivals' ? 'arrivals' : page === 'customerDepartures' ? 'departures' : page === 'customerSearch' ? 'search' : ''}`)} />
+      {loading && <p className="customer-muted" style={{ padding: "16px" }}>Đang tải dữ liệu...</p>}
+      {error && <p style={{ color: "#dc2626", padding: "16px" }}>{error}</p>}
+      {!loading && !error && (
+        <CustomerFlightTable
+          flights={filteredFlights}
+          onNavigate={(page, id) =>
+            navigate(
+              page === "customerDetail"
+                ? `/customer/flights/${id}`
+                : page === "customerArrivals"
+                ? "/customer/arrivals"
+                : page === "customerDepartures"
+                ? "/customer/departures"
+                : "/customer/search"
+            )
+          }
+        />
+      )}
     </div>
   );
 }

@@ -1,10 +1,33 @@
+import { useState } from "react";
+import { login } from "../../api";
 import "../../styles/staff/StaffPages.css";
 
 function StaffLoginPage({ onLoginSuccess }) {
-  function handleSubmit(event) {
+  const [username, setUsername] = useState("dieuphoi01");
+  const [password, setPassword] = useState("123456_hash");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleSubmit(event) {
     event.preventDefault();
-    localStorage.setItem("staffLoggedIn", "true");
-    onLoginSuccess && onLoginSuccess();
+    setLoading(true);
+    setError("");
+
+    try {
+      const user = await login(username, password);
+
+      if (user.vaiTro !== "Điều phối") {
+        setError("Tài khoản này không có quyền truy cập hệ thống nhân viên.");
+        return;
+      }
+
+      sessionStorage.setItem("staffUser", JSON.stringify(user));
+      onLoginSuccess && onLoginSuccess();
+    } catch (err) {
+      setError(err.message || "Đăng nhập thất bại.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -34,13 +57,37 @@ function StaffLoginPage({ onLoginSuccess }) {
           <form className="staff-login-form" onSubmit={handleSubmit}>
             <div className="staff-form-group">
               <label>Tên đăng nhập</label>
-              <input className="staff-input" placeholder="NV001 hoặc email@airport.vn" defaultValue="NV001" required />
+              <input
+                className="staff-input"
+                placeholder="NV001 hoặc email@airport.vn"
+                value={username}
+                onChange={(e) => { setUsername(e.target.value); setError(""); }}
+                required
+              />
             </div>
             <div className="staff-form-group">
               <label>Mật khẩu</label>
-              <input className="staff-input" type="password" placeholder="••••••••" defaultValue="123456" required />
+              <input
+                className="staff-input"
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => { setPassword(e.target.value); setError(""); }}
+                required
+              />
             </div>
-            <button type="submit" className="staff-btn staff-btn--primary">Đăng nhập</button>
+            {error && (
+              <p style={{ color: "#dc2626", fontSize: "14px", margin: "0 0 8px" }}>
+                {error}
+              </p>
+            )}
+            <button
+              type="submit"
+              className="staff-btn staff-btn--primary"
+              disabled={loading}
+            >
+              {loading ? "Đang đăng nhập..." : "Đăng nhập"}
+            </button>
           </form>
         </div>
       </section>

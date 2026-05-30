@@ -1,0 +1,183 @@
+================================================================
+  HƯỚNG DẪN CÀI ĐẶT VÀ CHẠY PROJECT
+  Hệ thống Theo dõi Chuyến bay - Sân bay Quốc tế Đà Nẵng
+================================================================
+
+YÊU CẦU PHẦN MỀM
+-----------------
+  - Node.js >= 18          (https://nodejs.org)
+  - SQL Server 2022        (đã cài sẵn)
+  - SQL Server Management Studio (SSMS) 20
+  - Git (để clone project)
+
+
+================================================================
+  PHẦN 1: CÀI ĐẶT SQL SERVER (làm 1 lần duy nhất)
+================================================================
+
+BƯỚC 1 — Cố định port 1433 cho SQL Server
+------------------------------------------
+  1. Mở "SQL Server Configuration Manager"
+     (Tìm trong Start Menu hoặc chạy: SQLServerManager16.msc)
+
+  2. Vào: SQL Server Network Configuration
+          → Protocols for MSSQLSERVER01
+
+  3. Double-click "TCP/IP" → chọn tab "IP Addresses"
+
+  4. Kéo xuống phần "IPAll":
+     - TCP Dynamic Ports : XÓA TRẮNG (để trống)
+     - TCP Port          : điền 1433
+
+  5. Bấm OK
+
+  6. Vào "SQL Server Services"
+     → Chuột phải "SQL Server (MSSQLSERVER01)" → Restart
+
+
+BƯỚC 2 — Bật SQL Server Authentication (Mixed Mode)
+----------------------------------------------------
+  1. Mở SSMS, kết nối vào: LAPTOP-FILDQM8N\MSSQLSERVER01
+     (dùng Windows Authentication)
+
+  2. Chuột phải vào tên server (trên cùng) → Properties
+
+  3. Tab "Security" → chọn:
+     "SQL Server and Windows Authentication mode"
+
+  4. Bấm OK
+
+  5. Restart SQL Server service (như Bước 1, mục 6)
+
+
+BƯỚC 3 — Tạo database từ file SQL
+----------------------------------
+  1. Trong SSMS, mở file: Nhom6_tuan8.sql
+     (nằm ở thư mục gốc của project)
+
+  2. Bấm Execute (F5) để chạy toàn bộ script
+
+  3. Kiểm tra: database "QL_ChuyenBay_DaNang" đã xuất hiện
+     trong Object Explorer
+
+
+BƯỚC 4 — Tạo tài khoản SQL cho Backend
+----------------------------------------
+  Trong SSMS, mở New Query và chạy lệnh sau:
+
+  USE master;
+  CREATE LOGIN airport_user WITH PASSWORD = 'Airport@2026';
+
+  USE QL_ChuyenBay_DaNang;
+  CREATE USER airport_user FOR LOGIN airport_user;
+  ALTER ROLE db_datareader ADD MEMBER airport_user;
+  ALTER ROLE db_datawriter ADD MEMBER airport_user;
+  GRANT EXECUTE TO airport_user;
+
+  Bấm Execute (F5)
+
+
+================================================================
+  PHẦN 2: CHẠY PROJECT (mỗi lần làm việc)
+================================================================
+
+BƯỚC 5 — Cài dependencies (chỉ làm 1 lần sau khi clone)
+---------------------------------------------------------
+  Mở terminal (VS Code: Ctrl + `)
+
+  Terminal 1 — Backend:
+    cd Backend
+    npm install
+
+  Terminal 2 — Frontend:
+    cd Frontend
+    npm install
+
+
+BƯỚC 6 — Khởi động Backend
+----------------------------
+  Mở terminal, chạy:
+
+    cd Backend
+    npm run dev
+
+  Kết quả thành công:
+    Backend đang chạy tại http://localhost:3001
+
+  ⚠ Giữ terminal này mở trong suốt quá trình làm việc
+
+
+BƯỚC 7 — Khởi động Frontend
+-----------------------------
+  Mở terminal MỚI (không đóng terminal Backend), chạy:
+
+    cd Frontend
+    npm run dev
+
+  Kết quả thành công:
+    VITE v6.x.x  ready in xxx ms
+    ➜  Local:   http://localhost:5173/
+
+  Mở trình duyệt vào: http://localhost:5173
+
+
+================================================================
+  PHẦN 3: TÀI KHOẢN ĐĂNG NHẬP MẪU
+================================================================
+
+  Cổng Admin (http://localhost:5173/admin/login):
+    Tên đăng nhập : admin01
+    Mật khẩu      : 123456_hash
+
+  Cổng Nhân viên (http://localhost:5173/staff/login):
+    Tên đăng nhập : dieuphoi01
+    Mật khẩu      : 123456_hash
+
+  Cổng Khách hàng (http://localhost:5173/customer):
+    Không cần đăng nhập
+
+
+================================================================
+  PHẦN 4: CẤU HÌNH KẾT NỐI (nếu cần thay đổi)
+================================================================
+
+  File cấu hình Backend: Backend/db.js
+
+  Thông tin kết nối hiện tại:
+    Server   : localhost
+    Port     : 1433
+    Database : QL_ChuyenBay_DaNang
+    User     : airport_user
+    Password : Airport@2026
+
+  Nếu chạy trên máy khác, thay "localhost" bằng IP của máy
+  chạy SQL Server và đảm bảo port 1433 không bị firewall chặn.
+
+
+================================================================
+  XỬ LÝ LỖI THƯỜNG GẶP
+================================================================
+
+  Lỗi: "Failed to connect" hoặc "ETIMEOUT"
+  → SQL Server chưa chạy hoặc port sai
+  → Kiểm tra SQL Server Configuration Manager, đảm bảo
+    TCP/IP đã bật và TCP Port = 1433
+  → Restart SQL Server service
+
+  Lỗi: "Login failed for user ''"
+  → Chưa bật SQL Server Authentication (Mixed Mode)
+  → Làm lại Bước 2
+
+  Lỗi: "Login failed for user 'airport_user'"
+  → Chưa tạo login hoặc sai mật khẩu
+  → Làm lại Bước 4
+
+  Lỗi: "Cannot open database QL_ChuyenBay_DaNang"
+  → Chưa chạy file SQL hoặc chạy bị lỗi
+  → Làm lại Bước 3
+
+  Lỗi Frontend: "localhost refused to connect"
+  → Backend chưa chạy
+  → Làm lại Bước 6
+
+================================================================
