@@ -24,7 +24,7 @@ async function callApi(url, options = {}) {
 function buildUrl(path, filters = {}) {
   const params = new URLSearchParams();
   Object.entries(filters).forEach(([key, value]) => {
-    if (value) params.append(key, value);
+    if (value !== undefined && value !== null && value !== "") params.append(key, value);
   });
   const query = params.toString();
   return query ? `${BASE_URL}${path}?${query}` : `${BASE_URL}${path}`;
@@ -40,6 +40,13 @@ export function layDanhSachLichTrinhDieuPhoi(filters = {}) {
 
 export function layChiTietDieuPhoi(maLichTrinh) {
   return callApi(`${BASE_URL}/schedules/${maLichTrinh}`);
+}
+
+export function capNhatTinhHinhDieuPhoi(maLichTrinh, payload) {
+  return callApi(`${BASE_URL}/schedules/${maLichTrinh}/status`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
 }
 
 export function layCongKhaDung(filters = {}) {

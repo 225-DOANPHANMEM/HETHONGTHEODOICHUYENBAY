@@ -19,7 +19,15 @@ public record ChuyenBayDto(
         String trangThaiHienTai,
         Integer soPhutCham,
         String lyDoChamHoacHuy,
+        String maCong,
         String tenCong,
-        String tenBangChuyenHanhLy
+        String tenNhaGa,
+        String thoiGianBatDauSuDungCong,
+        String thoiGianKetThucSuDungCong,
+        String maBangChuyenHanhLy,
+        String tenBangChuyenHanhLy,
+        String tenNhaGaBangChuyen,
+        String thoiGianBatDauSuDungBangChuyen,
+        String thoiGianKetThucSuDungBangChuyen
 ) {
 }

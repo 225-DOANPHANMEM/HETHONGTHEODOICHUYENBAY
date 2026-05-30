@@ -3,24 +3,67 @@ import AdminLayout from "../../layouts/AdminLayout.jsx";
 import {
   capNhatNguoiDung,
   datLaiMatKhau,
-  khoaTaiKhoan,
   layChiTietNguoiDung,
   layDanhSachNguoiDung,
   layDanhSachTrangThai,
   layDanhSachVaiTro,
   layThongKeNguoiDung,
-  moKhoaTaiKhoan,
-  ngungSuDungTaiKhoan,
   themNguoiDung,
 } from "../../api/nguoiDungApi.js";
 import "../../styles/admin/UserManagementPage.css";
 
+const ACCOUNT_STATUS = {
+  active: "Hoạt động",
+  locked: "Khóa",
+  deactivated: "Ngừng sử dụng",
+};
+
 const emptyFilters = { keyword: "", vaiTro: "", trangThai: "" };
-const emptyCreateForm = { tenDangNhap: "", matKhau: "", email: "", soDienThoai: "", vaiTro: "", trangThaiTaiKhoan: "" };
-const emptyEditForm = { email: "", soDienThoai: "", vaiTro: "", trangThaiTaiKhoan: "" };
+const emptyCreateForm = {
+  tenDangNhap: "",
+  matKhau: "",
+  email: "",
+  soDienThoai: "",
+  vaiTro: "",
+  trangThaiTaiKhoan: "",
+};
+const emptyEditForm = {
+  email: "",
+  soDienThoai: "",
+  vaiTro: "",
+  trangThaiTaiKhoan: "",
+  lyDo: "",
+  matKhauMoi: "",
+};
+
+const textFixes = {
+  "Quáº£n trá»‹": "Quản trị",
+  "Äiá»u phá»‘i": "Điều phối",
+  "KhÃ¡ch hÃ ng": "Khách hàng",
+  "Hoáº¡t Ä‘á»™ng": "Hoạt động",
+  "KhÃ³a": "Khóa",
+  "Ngá»«ng sá»­ dá»¥ng": "Ngừng sử dụng",
+};
+
+function normalizeText(value) {
+  if (value === null || value === undefined || value === "") {
+    return "";
+  }
+  return textFixes[String(value)] || String(value);
+}
+
+function displayValue(value, fallback = "Chưa cập nhật") {
+  const normalized = normalizeText(value);
+  return normalized || fallback;
+}
+
+function requiresReason(status) {
+  return status === ACCOUNT_STATUS.locked || status === ACCOUNT_STATUS.deactivated;
+}
 
 function UserManagementPage({ onNavigate }) {
   const [users, setUsers] = useState([]);
+  const [activeUsers, setActiveUsers] = useState([]);
   const [stats, setStats] = useState(null);
   const [roles, setRoles] = useState([]);
   const [statuses, setStatuses] = useState([]);
@@ -36,13 +79,10 @@ function UserManagementPage({ onNavigate }) {
   const [editMode, setEditMode] = useState(false);
   const [createForm, setCreateForm] = useState(emptyCreateForm);
   const [editForm, setEditForm] = useState(emptyEditForm);
-  const [resetPasswordOpen, setResetPasswordOpen] = useState(false);
-  const [newPassword, setNewPassword] = useState("");
-  const [lockOpen, setLockOpen] = useState(false);
-  const [lockReason, setLockReason] = useState("");
 
-  const roleOptions = useMemo(() => roles, [roles]);
-  const statusOptions = useMemo(() => statuses, [statuses]);
+  const roleOptions = useMemo(() => roles.map(normalizeText), [roles]);
+  const statusOptions = useMemo(() => statuses.map(normalizeText), [statuses]);
+  const isReasonRequired = editMode && requiresReason(editForm.trangThaiTaiKhoan);
 
   useEffect(() => {
     loadInitialData();
@@ -51,24 +91,30 @@ function UserManagementPage({ onNavigate }) {
   useEffect(() => {
     loadUsers(appliedFilters);
     loadStats();
+    loadActiveUsers();
   }, [appliedFilters]);
 
   async function loadInitialData() {
     try {
       setLoading(true);
       setError("");
-      const [rolesData, statusesData] = await Promise.all([layDanhSachVaiTro(), layDanhSachTrangThai()]);
-      setRoles(rolesData || []);
-      setStatuses(statusesData || []);
+      const [rolesData, statusesData] = await Promise.all([
+        layDanhSachVaiTro(),
+        layDanhSachTrangThai(),
+      ]);
+      const normalizedRoles = (rolesData || []).map(normalizeText);
+      const normalizedStatuses = (statusesData || []).map(normalizeText);
+      setRoles(normalizedRoles);
+      setStatuses(normalizedStatuses);
       setCreateForm((prev) => ({
         ...prev,
-        vaiTro: rolesData?.[0] || "",
-        trangThaiTaiKhoan: statusesData?.[0] || "",
+        vaiTro: normalizedRoles[0] || "",
+        trangThaiTaiKhoan: normalizedStatuses[0] || "",
       }));
       setEditForm((prev) => ({
         ...prev,
-        vaiTro: rolesData?.[0] || "",
-        trangThaiTaiKhoan: statusesData?.[0] || "",
+        vaiTro: normalizedRoles[0] || "",
+        trangThaiTaiKhoan: normalizedStatuses[0] || "",
       }));
     } catch (e) {
       setError(e.message);
@@ -82,7 +128,7 @@ function UserManagementPage({ onNavigate }) {
       setLoading(true);
       setError("");
       const data = await layDanhSachNguoiDung(currentFilters);
-      setUsers(data || []);
+      setUsers(Array.isArray(data) ? data : []);
     } catch (e) {
       setError(e.message);
     } finally {
@@ -99,8 +145,17 @@ function UserManagementPage({ onNavigate }) {
     }
   }
 
+  async function loadActiveUsers() {
+    try {
+      const data = await layDanhSachNguoiDung({ trangThai: ACCOUNT_STATUS.active });
+      setActiveUsers(Array.isArray(data) ? data : []);
+    } catch (e) {
+      setError(e.message);
+    }
+  }
+
   async function reloadData() {
-    await Promise.all([loadUsers(appliedFilters), loadStats()]);
+    await Promise.all([loadUsers(appliedFilters), loadStats(), loadActiveUsers()]);
   }
 
   function onFilter() {
@@ -110,6 +165,14 @@ function UserManagementPage({ onNavigate }) {
   function onRefresh() {
     setFilters(emptyFilters);
     setAppliedFilters(emptyFilters);
+    setSuccess("");
+    setError("");
+  }
+
+  function applyQuickFilter(nextFilters) {
+    const normalizedFilters = { ...emptyFilters, ...nextFilters };
+    setFilters(normalizedFilters);
+    setAppliedFilters(normalizedFilters);
     setSuccess("");
     setError("");
   }
@@ -131,8 +194,8 @@ function UserManagementPage({ onNavigate }) {
     setEditMode(false);
     setCreateForm({
       ...emptyCreateForm,
-      vaiTro: roles[0] || "",
-      trangThaiTaiKhoan: statuses[0] || "",
+      vaiTro: roleOptions[0] || "",
+      trangThaiTaiKhoan: statusOptions[0] || "",
     });
     setFormOpen(true);
   }
@@ -143,23 +206,47 @@ function UserManagementPage({ onNavigate }) {
     setEditForm({
       email: user.email || "",
       soDienThoai: user.soDienThoai || "",
-      vaiTro: user.vaiTro || roles[0] || "",
-      trangThaiTaiKhoan: user.trangThaiTaiKhoan || statuses[0] || "",
+      vaiTro: normalizeText(user.vaiTro) || roleOptions[0] || "",
+      trangThaiTaiKhoan: normalizeText(user.trangThaiTaiKhoan) || statusOptions[0] || "",
+      lyDo: "",
+      matKhauMoi: "",
     });
     setFormOpen(true);
   }
 
+  function updateCreateForm(field, value) {
+    setCreateForm((current) => ({ ...current, [field]: value }));
+  }
+
+  function updateEditForm(field, value) {
+    setEditForm((current) => ({ ...current, [field]: value }));
+  }
+
   async function submitUserForm(event) {
     event.preventDefault();
+    setError("");
+    setSuccess("");
+
+    if (editMode && isReasonRequired && !editForm.lyDo.trim()) {
+      setError("Vui lòng nhập lý do khi khóa hoặc ngừng sử dụng tài khoản.");
+      return;
+    }
+
     try {
       setSubmitting(true);
-      setError("");
       if (editMode && selectedUser) {
-        await capNhatNguoiDung(selectedUser.maTaiKhoan, editForm);
-        setSuccess("Cap nhat tai khoan thanh cong");
+        const { matKhauMoi, ...accountPayload } = editForm;
+        await capNhatNguoiDung(selectedUser.maTaiKhoan, {
+          ...accountPayload,
+          lyDo: accountPayload.lyDo.trim() || null,
+        });
+        if (matKhauMoi.trim()) {
+          await datLaiMatKhau(selectedUser.maTaiKhoan, matKhauMoi.trim());
+        }
+        setSuccess("Cập nhật tài khoản thành công.");
       } else {
         await themNguoiDung(createForm);
-        setSuccess("Them tai khoan thanh cong");
+        setSuccess("Thêm tài khoản thành công.");
       }
       setFormOpen(false);
       await reloadData();
@@ -170,82 +257,16 @@ function UserManagementPage({ onNavigate }) {
     }
   }
 
-  async function onToggleLock(user) {
-    try {
-      setSubmitting(true);
-      if (user.trangThaiTaiKhoan === "Khóa") {
-        await moKhoaTaiKhoan(user.maTaiKhoan);
-        setSuccess("Mo khoa tai khoan thanh cong");
-      } else {
-        setSelectedUser(user);
-        setLockReason("");
-        setLockOpen(true);
-        return;
-      }
-      await reloadData();
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  async function submitLock() {
-    if (!selectedUser) return;
-    try {
-      setSubmitting(true);
-      await khoaTaiKhoan(selectedUser.maTaiKhoan, lockReason);
-      setSuccess("Khoa tai khoan thanh cong");
-      setLockOpen(false);
-      await reloadData();
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  async function onDeactivate(user) {
-    try {
-      setSubmitting(true);
-      await ngungSuDungTaiKhoan(user.maTaiKhoan);
-      setSuccess("Ngung su dung tai khoan thanh cong");
-      await reloadData();
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  async function submitResetPassword() {
-    if (!selectedUser || !newPassword.trim()) return;
-    try {
-      setSubmitting(true);
-      await datLaiMatKhau(selectedUser.maTaiKhoan, newPassword.trim());
-      setSuccess("Dat lai mat khau thanh cong");
-      setResetPasswordOpen(false);
-      setNewPassword("");
-      await reloadData();
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  const displayValue = (value) => (value ? value : "Chua cap nhat");
-
   return (
     <AdminLayout activePage="users" onNavigate={onNavigate}>
       <section className="user-page">
         <div className="user-page__heading">
           <div>
-            <h1>Nguoi dung & phan quyen</h1>
-            <p>Quan ly tai khoan noi bo san bay, vai tro va trang thai truy cap.</p>
+            <h1>Người dùng & phân quyền</h1>
+            <p>Quản lý tài khoản nội bộ sân bay, vai trò và trạng thái truy cập.</p>
           </div>
           <button className="primary-btn" type="button" onClick={openCreateModal}>
-            <i className="fa-solid fa-user-plus" /> Them tai khoan
+            <i className="fa-solid fa-user-plus" /> Thêm tài khoản
           </button>
         </div>
 
@@ -253,113 +274,238 @@ function UserManagementPage({ onNavigate }) {
         {success && <div className="alert alert--success">{success}</div>}
 
         <div className="stats-grid">
-          <StatCard icon="fa-users" label="Tong tai khoan" value={stats?.tongTaiKhoan ?? 0} />
-          <StatCard icon="fa-circle-check" label="Dang hoat dong" value={stats?.soHoatDong ?? 0} />
-          <StatCard icon="fa-lock" label="Bi khoa" value={stats?.soBiKhoa ?? 0} />
-          <StatCard icon="fa-user-slash" label="Ngung su dung" value={stats?.soNgungSuDung ?? 0} />
-          <StatCard icon="fa-user-shield" label="Quan tri" value={stats?.soQuanTri ?? 0} />
-          <StatCard icon="fa-diagram-project" label="Dieu phoi" value={stats?.soDieuPhoi ?? 0} />
-          <StatCard icon="fa-user" label="Khach hang" value={stats?.soKhachHang ?? 0} />
+          <StatCard icon="fa-users" tone="blue" label="Tổng tài khoản" value={stats?.tongTaiKhoan ?? 0} onClick={() => applyQuickFilter(emptyFilters)} />
+          <StatCard icon="fa-circle-check" tone="green" label="Đang hoạt động" value={stats?.soHoatDong ?? 0} onClick={() => applyQuickFilter({ trangThai: ACCOUNT_STATUS.active })} />
+          <StatCard icon="fa-lock" tone="amber" label="Bị khóa" value={stats?.soBiKhoa ?? 0} onClick={() => applyQuickFilter({ trangThai: ACCOUNT_STATUS.locked })} />
+          <StatCard icon="fa-user-slash" tone="red" label="Ngừng sử dụng" value={stats?.soNgungSuDung ?? 0} onClick={() => applyQuickFilter({ trangThai: ACCOUNT_STATUS.deactivated })} />
+          <StatCard icon="fa-user-shield" tone="indigo" label="Quản trị" value={stats?.soQuanTri ?? 0} onClick={() => applyQuickFilter({ vaiTro: "Quản trị" })} />
+          <StatCard icon="fa-diagram-project" tone="cyan" label="Điều phối" value={stats?.soDieuPhoi ?? 0} onClick={() => applyQuickFilter({ vaiTro: "Điều phối" })} />
+          <StatCard icon="fa-user" tone="slate" label="Khách hàng" value={stats?.soKhachHang ?? 0} onClick={() => applyQuickFilter({ vaiTro: "Khách hàng" })} />
         </div>
 
-        <div className="panel">
-          <div className="filters">
-            <input type="text" value={filters.keyword} onChange={(e) => setFilters({ ...filters, keyword: e.target.value })} placeholder="Tim ten dang nhap, email, so dien thoai" />
-            <select value={filters.vaiTro} onChange={(e) => setFilters({ ...filters, vaiTro: e.target.value })}>
-              <option value="">Tat ca vai tro</option>
-              {roleOptions.map((role) => <option key={role} value={role}>{role}</option>)}
-            </select>
-            <select value={filters.trangThai} onChange={(e) => setFilters({ ...filters, trangThai: e.target.value })}>
-              <option value="">Tat ca trang thai</option>
-              {statusOptions.map((status) => <option key={status} value={status}>{status}</option>)}
-            </select>
-            <button type="button" onClick={onFilter}><i className="fa-solid fa-filter" /> Loc</button>
-            <button type="button" onClick={onRefresh}><i className="fa-solid fa-rotate-right" /> Lam moi</button>
+        <div className="user-page__content-grid">
+          <div className="panel user-list-panel">
+            <div className="panel__header">
+              <div>
+                <h2>Danh sách tài khoản</h2>
+                <p>Thông tin rút gọn, dùng biểu tượng xem để mở chi tiết.</p>
+              </div>
+            </div>
+            <div className="filters">
+              <input
+                type="text"
+                value={filters.keyword}
+                onChange={(e) => setFilters({ ...filters, keyword: e.target.value })}
+                placeholder="Tìm tên đăng nhập, email, số điện thoại"
+              />
+              <select value={filters.vaiTro} onChange={(e) => setFilters({ ...filters, vaiTro: e.target.value })}>
+                <option value="">Tất cả vai trò</option>
+                {roleOptions.map((role) => <option key={role} value={role}>{role}</option>)}
+              </select>
+              <select value={filters.trangThai} onChange={(e) => setFilters({ ...filters, trangThai: e.target.value })}>
+                <option value="">Tất cả trạng thái</option>
+                {statusOptions.map((status) => <option key={status} value={status}>{status}</option>)}
+              </select>
+              <button type="button" onClick={onFilter}><i className="fa-solid fa-filter" /> Lọc</button>
+              <button type="button" onClick={onRefresh}><i className="fa-solid fa-rotate-right" /> Làm mới</button>
+            </div>
+
+            {loading ? <p className="loading">Đang tải dữ liệu...</p> : (
+              <div className="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Mã tài khoản</th>
+                      <th>Tên đăng nhập</th>
+                      <th>Vai trò</th>
+                      <th>Trạng thái</th>
+                      <th>Hành động</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {users.map((user) => (
+                      <tr key={user.maTaiKhoan}>
+                        <td>{user.maTaiKhoan}</td>
+                        <td>{displayValue(user.tenDangNhap)}</td>
+                        <td>{displayValue(user.vaiTro)}</td>
+                        <td><StatusBadge status={displayValue(user.trangThaiTaiKhoan)} /></td>
+                        <td className="actions">
+                          <button className="action-btn action-btn--view" type="button" onClick={() => openDetail(user)} aria-label="Xem chi tiết tài khoản">
+                            <i className="fa-solid fa-eye" />
+                          </button>
+                          <button className="action-btn action-btn--edit" type="button" onClick={() => openEditModal(user)} aria-label="Cập nhật tài khoản">
+                            <i className="fa-solid fa-pen-to-square" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
 
-          {loading ? <p className="loading">Dang tai du lieu...</p> : (
-            <div className="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Ma tai khoan</th><th>Ten dang nhap</th><th>Email</th><th>So dien thoai</th><th>Vai tro</th><th>Trang thai</th><th>Ngay tao</th><th>Hanh dong</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {users.map((user) => (
-                    <tr key={user.maTaiKhoan}>
-                      <td>{user.maTaiKhoan}</td>
-                      <td>{user.tenDangNhap}</td>
-                      <td>{displayValue(user.email)}</td>
-                      <td>{displayValue(user.soDienThoai)}</td>
-                      <td>{user.vaiTro}</td>
-                      <td>{user.trangThaiTaiKhoan}</td>
-                      <td>{displayValue(user.ngayTao)}</td>
-                      <td className="actions">
-                        <button onClick={() => openDetail(user)}><i className="fa-solid fa-eye" /></button>
-                        <button onClick={() => openEditModal(user)}><i className="fa-solid fa-pen-to-square" /></button>
-                        <button onClick={() => onToggleLock(user)}><i className={`fa-solid ${user.trangThaiTaiKhoan === "Khóa" ? "fa-unlock" : "fa-lock"}`} /></button>
-                        <button onClick={() => onDeactivate(user)}><i className="fa-solid fa-user-slash" /></button>
-                        <button onClick={() => { setSelectedUser(user); setNewPassword(""); setResetPasswordOpen(true); }}><i className="fa-solid fa-key" /></button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          <aside className="panel active-accounts-panel">
+            <div className="panel__header">
+              <div>
+                <h2>Tài khoản đang hoạt động</h2>
+                <p>{activeUsers.length} tài khoản có quyền truy cập hiện tại.</p>
+              </div>
+              <span className="active-accounts-panel__icon">
+                <i className="fa-solid fa-user-check" />
+              </span>
             </div>
-          )}
+            <div className="active-account-list">
+              {activeUsers.length === 0 && (
+                <p className="loading">Không có tài khoản đang hoạt động.</p>
+              )}
+              {activeUsers.map((user) => (
+                <button
+                  className="active-account-item"
+                  key={user.maTaiKhoan}
+                  type="button"
+                  onClick={() => openDetail(user)}
+                >
+                  <span className="active-account-item__avatar">
+                    <i className="fa-solid fa-user" />
+                  </span>
+                  <span className="active-account-item__body">
+                    <strong>{displayValue(user.tenDangNhap)}</strong>
+                    <small>{displayValue(user.vaiTro)} · {user.maTaiKhoan}</small>
+                  </span>
+                </button>
+              ))}
+            </div>
+          </aside>
         </div>
       </section>
 
       {detailOpen && selectedUser && (
-        <Modal title="Chi tiet tai khoan" onClose={() => setDetailOpen(false)}>
-          <Info label="Ma tai khoan" value={selectedUser.maTaiKhoan} />
-          <Info label="Ten dang nhap" value={selectedUser.tenDangNhap} />
-          <Info label="Email" value={displayValue(selectedUser.email)} />
-          <Info label="So dien thoai" value={displayValue(selectedUser.soDienThoai)} />
-          <Info label="Vai tro" value={selectedUser.vaiTro} />
-          <Info label="Trang thai" value={selectedUser.trangThaiTaiKhoan} />
-          <Info label="Ngay tao" value={displayValue(selectedUser.ngayTao)} />
+        <Modal title="Chi tiết tài khoản" onClose={() => setDetailOpen(false)}>
+          <div className="account-detail">
+            <div className="account-detail__summary">
+              <span className="account-detail__avatar">
+                <i className="fa-solid fa-user-shield" />
+              </span>
+              <div>
+                <p>{selectedUser.maTaiKhoan}</p>
+                <h4>{displayValue(selectedUser.tenDangNhap)}</h4>
+              </div>
+              <StatusBadge status={displayValue(selectedUser.trangThaiTaiKhoan)} />
+            </div>
+            <div className="account-detail__grid">
+              <Info label="Vai trò" value={displayValue(selectedUser.vaiTro)} icon="fa-user-tag" />
+              <Info label="Email" value={displayValue(selectedUser.email)} icon="fa-envelope" />
+              <Info label="Số điện thoại" value={displayValue(selectedUser.soDienThoai)} icon="fa-phone" />
+              <Info label="Ngày tạo" value={displayValue(selectedUser.ngayTao)} icon="fa-calendar-plus" />
+              <Info label="Mã tài khoản" value={selectedUser.maTaiKhoan} icon="fa-id-card" />
+              <Info label="Trạng thái" value={displayValue(selectedUser.trangThaiTaiKhoan)} icon="fa-signal" />
+            </div>
+          </div>
         </Modal>
       )}
 
       {formOpen && (
-        <Modal title={editMode ? "Cap nhat tai khoan" : "Them tai khoan"} onClose={() => setFormOpen(false)}>
+        <Modal title={editMode ? "Cập nhật tài khoản" : "Thêm tài khoản"} onClose={() => setFormOpen(false)}>
           <form onSubmit={submitUserForm} className="form">
-            {!editMode && <input required placeholder="Ten dang nhap" value={createForm.tenDangNhap} onChange={(e) => setCreateForm({ ...createForm, tenDangNhap: e.target.value })} />}
-            {!editMode && <input required type="password" placeholder="Mat khau" value={createForm.matKhau} onChange={(e) => setCreateForm({ ...createForm, matKhau: e.target.value })} />}
-            <input placeholder="Email" value={editMode ? editForm.email : createForm.email} onChange={(e) => editMode ? setEditForm({ ...editForm, email: e.target.value }) : setCreateForm({ ...createForm, email: e.target.value })} />
-            <input placeholder="So dien thoai" value={editMode ? editForm.soDienThoai : createForm.soDienThoai} onChange={(e) => editMode ? setEditForm({ ...editForm, soDienThoai: e.target.value }) : setCreateForm({ ...createForm, soDienThoai: e.target.value })} />
-            <select value={editMode ? editForm.vaiTro : createForm.vaiTro} onChange={(e) => editMode ? setEditForm({ ...editForm, vaiTro: e.target.value }) : setCreateForm({ ...createForm, vaiTro: e.target.value })}>
-              {roles.map((role) => <option key={role} value={role}>{role}</option>)}
-            </select>
-            <select value={editMode ? editForm.trangThaiTaiKhoan : createForm.trangThaiTaiKhoan} onChange={(e) => editMode ? setEditForm({ ...editForm, trangThaiTaiKhoan: e.target.value }) : setCreateForm({ ...createForm, trangThaiTaiKhoan: e.target.value })}>
-              {statuses.map((status) => <option key={status} value={status}>{status}</option>)}
-            </select>
-            <button disabled={submitting} type="submit" className="primary-btn">{submitting ? "Dang xu ly..." : "Xac nhan"}</button>
+            {editMode && selectedUser && (
+              <div className="form__summary">
+                <span>{selectedUser.maTaiKhoan}</span>
+                <strong>{displayValue(selectedUser.tenDangNhap)}</strong>
+              </div>
+            )}
+
+            {!editMode && (
+              <label>
+                <span>Tên đăng nhập</span>
+                <input required value={createForm.tenDangNhap} onChange={(e) => updateCreateForm("tenDangNhap", e.target.value)} />
+              </label>
+            )}
+            {!editMode && (
+              <label>
+                <span>Mật khẩu</span>
+                <input required type="password" value={createForm.matKhau} onChange={(e) => updateCreateForm("matKhau", e.target.value)} />
+              </label>
+            )}
+            <label>
+              <span>Email</span>
+              <input value={editMode ? editForm.email : createForm.email} onChange={(e) => editMode ? updateEditForm("email", e.target.value) : updateCreateForm("email", e.target.value)} />
+            </label>
+            <label>
+              <span>Số điện thoại</span>
+              <input value={editMode ? editForm.soDienThoai : createForm.soDienThoai} onChange={(e) => editMode ? updateEditForm("soDienThoai", e.target.value) : updateCreateForm("soDienThoai", e.target.value)} />
+            </label>
+            <label>
+              <span>Vai trò</span>
+              <select value={editMode ? editForm.vaiTro : createForm.vaiTro} onChange={(e) => editMode ? updateEditForm("vaiTro", e.target.value) : updateCreateForm("vaiTro", e.target.value)}>
+                {roleOptions.map((role) => <option key={role} value={role}>{role}</option>)}
+              </select>
+            </label>
+            <label>
+              <span>Trạng thái tài khoản</span>
+              <select value={editMode ? editForm.trangThaiTaiKhoan : createForm.trangThaiTaiKhoan} onChange={(e) => editMode ? updateEditForm("trangThaiTaiKhoan", e.target.value) : updateCreateForm("trangThaiTaiKhoan", e.target.value)}>
+                {statusOptions.map((status) => <option key={status} value={status}>{status}</option>)}
+              </select>
+            </label>
+
+            {editMode && (
+              <label className="form__wide">
+                <span>{isReasonRequired ? "Lý do thay đổi trạng thái *" : "Lý do thay đổi trạng thái"}</span>
+                <textarea
+                  required={isReasonRequired}
+                  placeholder="Bắt buộc khi khóa hoặc ngừng sử dụng tài khoản"
+                  value={editForm.lyDo}
+                  onChange={(e) => updateEditForm("lyDo", e.target.value)}
+                />
+              </label>
+            )}
+
+            {editMode && (
+              <label className="form__wide">
+                <span>Mật khẩu mới</span>
+                <input
+                  type="password"
+                  placeholder="Để trống nếu không đặt lại mật khẩu"
+                  value={editForm.matKhauMoi}
+                  onChange={(e) => updateEditForm("matKhauMoi", e.target.value)}
+                />
+              </label>
+            )}
+
+            <div className="form__actions">
+              <button disabled={submitting} type="button" className="secondary-btn" onClick={() => setFormOpen(false)}>Hủy</button>
+              <button disabled={submitting} type="submit" className="primary-btn">
+                {submitting ? "Đang xử lý..." : "Xác nhận"}
+              </button>
+            </div>
           </form>
-        </Modal>
-      )}
-
-      {resetPasswordOpen && selectedUser && (
-        <Modal title="Reset mat khau" onClose={() => setResetPasswordOpen(false)}>
-          <input type="password" placeholder="Nhap mat khau moi" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
-          <button disabled={submitting || !newPassword.trim()} onClick={submitResetPassword} type="button" className="primary-btn">{submitting ? "Dang xu ly..." : "Xac nhan reset"}</button>
-        </Modal>
-      )}
-
-      {lockOpen && selectedUser && (
-        <Modal title="Khoa tai khoan" onClose={() => setLockOpen(false)}>
-          <textarea placeholder="Nhap ly do khoa tai khoan" value={lockReason} onChange={(e) => setLockReason(e.target.value)} />
-          <button disabled={submitting} onClick={submitLock} type="button" className="primary-btn">{submitting ? "Dang xu ly..." : "Xac nhan khoa"}</button>
         </Modal>
       )}
     </AdminLayout>
   );
 }
 
-function StatCard({ icon, label, value }) {
-  return <article className="stat-card"><i className={`fa-solid ${icon}`} /><div><p>{label}</p><h3>{value}</h3></div></article>;
+function StatCard({ icon, tone, label, value, onClick }) {
+  return (
+    <button className={`stat-card stat-card--${tone}`} type="button" onClick={onClick}>
+      <i className={`fa-solid ${icon}`} />
+      <div>
+        <p>{label}</p>
+        <h3>{value}</h3>
+      </div>
+    </button>
+  );
+}
+
+function StatusBadge({ status }) {
+  const normalizedStatus = normalizeText(status);
+  const className = normalizedStatus === ACCOUNT_STATUS.active
+    ? "status-badge status-badge--active"
+    : normalizedStatus === ACCOUNT_STATUS.locked
+      ? "status-badge status-badge--locked"
+      : "status-badge status-badge--deactivated";
+
+  return <span className={className}>{normalizedStatus}</span>;
 }
 
 function Modal({ title, onClose, children }) {
@@ -367,15 +513,30 @@ function Modal({ title, onClose, children }) {
     <div className="modal">
       <div className="modal__overlay" onClick={onClose} />
       <div className="modal__content">
-        <div className="modal__head"><h3>{title}</h3><button onClick={onClose} type="button"><i className="fa-solid fa-xmark" /></button></div>
+        <div className="modal__head">
+          <h3>{title}</h3>
+          <button onClick={onClose} type="button" aria-label="Đóng">
+            <i className="fa-solid fa-xmark" />
+          </button>
+        </div>
         <div className="modal__body">{children}</div>
       </div>
     </div>
   );
 }
 
-function Info({ label, value }) {
-  return <div className="info-row"><span>{label}</span><strong>{value}</strong></div>;
+function Info({ label, value, icon = "fa-circle-info" }) {
+  return (
+    <div className="info-row">
+      <span className="info-row__icon">
+        <i className={`fa-solid ${icon}`} />
+      </span>
+      <span className="info-row__content">
+        <span>{label}</span>
+        <strong>{displayValue(value)}</strong>
+      </span>
+    </div>
+  );
 }
 
 export default UserManagementPage;

@@ -1,6 +1,8 @@
 package com.danangairport.controller;
 
 import com.danangairport.dto.BangChuyenOptionDto;
+import com.danangairport.dto.CapNhatTinhHinhChuyenBayRequest;
+import com.danangairport.dto.ChuyenBayDto;
 import com.danangairport.dto.CongOptionDto;
 import com.danangairport.dto.DieuPhoiTongQuanDto;
 import com.danangairport.dto.LichTrinhDieuPhoiDto;
@@ -10,6 +12,7 @@ import com.danangairport.dto.TaoPhanCongBangChuyenRequest;
 import com.danangairport.dto.TaoPhanCongCongRequest;
 import com.danangairport.dto.ThongKeDieuPhoiDto;
 import com.danangairport.service.DieuPhoiVanHanhService;
+import com.danangairport.service.ChuyenBayQuanTriService;
 import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -31,9 +34,11 @@ import java.util.Map;
 @RequestMapping("/api/admin/dispatch")
 public class DieuPhoiVanHanhController {
     private final DieuPhoiVanHanhService service;
+    private final ChuyenBayQuanTriService chuyenBayService;
 
-    public DieuPhoiVanHanhController(DieuPhoiVanHanhService service) {
+    public DieuPhoiVanHanhController(DieuPhoiVanHanhService service, ChuyenBayQuanTriService chuyenBayService) {
         this.service = service;
+        this.chuyenBayService = chuyenBayService;
     }
 
     @GetMapping("/statistics")
@@ -56,6 +61,14 @@ public class DieuPhoiVanHanhController {
     @GetMapping("/schedules/{maLichTrinh}")
     public DieuPhoiTongQuanDto layChiTiet(@PathVariable String maLichTrinh) {
         return service.layChiTiet(maLichTrinh);
+    }
+
+    @PatchMapping("/schedules/{maLichTrinh}/status")
+    public ResponseEntity<ChuyenBayDto> capNhatTinhHinh(
+            @PathVariable String maLichTrinh,
+            @Valid @RequestBody CapNhatTinhHinhChuyenBayRequest request
+    ) {
+        return ResponseEntity.ok(chuyenBayService.capNhatTinhHinh(maLichTrinh, request));
     }
 
     @GetMapping("/available-gates")

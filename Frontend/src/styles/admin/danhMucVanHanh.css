@@ -22,8 +22,6 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #ffffff;
-  background: #0f2a43;
 }
 
 .operation-header__icon {
@@ -136,6 +134,18 @@
   border-radius: 8px;
   background: #ffffff;
   box-shadow: 0 8px 24px rgba(15, 42, 67, 0.06);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.operation-stat:hover,
+.operation-stat:focus-visible {
+  border-color: #38bdf8;
+  box-shadow: 0 14px 30px rgba(14, 165, 233, 0.13);
+  transform: translateY(-1px);
+  outline: none;
 }
 
 .operation-stat__icon {
@@ -144,6 +154,37 @@
   flex: 0 0 42px;
   border-radius: 8px;
   font-size: 17px;
+}
+
+.operation-header__icon,
+.operation-stat--blue .operation-stat__icon {
+  color: #0369a1;
+  background: #e0f2fe;
+}
+
+.operation-stat--indigo .operation-stat__icon {
+  color: #4338ca;
+  background: #e0e7ff;
+}
+
+.operation-stat--cyan .operation-stat__icon {
+  color: #0891b2;
+  background: #cffafe;
+}
+
+.operation-stat--violet .operation-stat__icon {
+  color: #7c3aed;
+  background: #ede9fe;
+}
+
+.operation-stat--green .operation-stat__icon {
+  color: #15803d;
+  background: #dcfce7;
+}
+
+.operation-stat--amber .operation-stat__icon {
+  color: #b45309;
+  background: #fef3c7;
 }
 
 .operation-stat p {

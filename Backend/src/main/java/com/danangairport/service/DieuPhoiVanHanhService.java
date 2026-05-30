@@ -84,6 +84,7 @@ public class DieuPhoiVanHanhService {
                 lichSuBangChuyen.stream().filter(PhanCongBangChuyenDto::dangHienHanh).findFirst().orElse(null),
                 lichSuCong,
                 lichSuBangChuyen,
+                repository.layLichSuCapNhat(maLichTrinh),
                 congKhaDung,
                 bangChuyenKhaDung
         );
@@ -185,7 +186,7 @@ public class DieuPhoiVanHanhService {
     }
 
     public List<String> layTrangThaiChuyenBay() {
-        return List.of("Đã lên lịch", "Đang làm thủ tục", "Đang bay", "Đã hạ cánh", "Hoàn thành", "Chậm chuyến", "Hủy chuyến");
+        return List.of("Đã lên lịch", "Đang làm thủ tục", "Đang bay", "Chậm chuyến", "Hủy chuyến", "Hoàn thành");
     }
 
     private void validateLichTrinhTonTai(String maLichTrinh) {

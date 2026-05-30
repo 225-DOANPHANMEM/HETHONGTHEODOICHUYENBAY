@@ -5,6 +5,7 @@ import com.danangairport.dto.CapNhatTinhHinhChuyenBayRequest;
 import com.danangairport.dto.ChiTietChuyenBayDto;
 import com.danangairport.dto.ChuyenBayDto;
 import com.danangairport.dto.ChuyenBayOptionDto;
+import com.danangairport.dto.LichSuCapNhatChuyenBayDto;
 import com.danangairport.dto.TaoChuyenBayRequest;
 import com.danangairport.dto.ThongKeChuyenBayDto;
 import com.danangairport.dto.XoaChuyenBayRequest;
@@ -45,13 +46,19 @@ public class ChuyenBayQuanTriService {
     }
 
     public List<ChuyenBayDto> layDanhSach(String keyword, String loaiChuyenBay, String trangThai,
-                                           String maHangHangKhong, LocalDate tuNgay, LocalDate denNgay) {
+                                           String maHangHangKhong, LocalDate ngayBay, String maCong,
+                                           String maNhaGa, boolean includeArchived) {
         validateLoaiChuyenBayNeuCo(loaiChuyenBay);
         validateTrangThaiNeuCo(trangThai);
-        if (tuNgay != null && denNgay != null && denNgay.isBefore(tuNgay)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Đến ngày không được nhỏ hơn từ ngày.");
+        boolean shouldIncludeArchived = includeArchived || "Đã xóa".equals(trangThai);
+        return repository.layDanhSach(keyword, loaiChuyenBay, trangThai, maHangHangKhong, ngayBay, maCong, maNhaGa, shouldIncludeArchived);
+    }
+
+    public List<LichSuCapNhatChuyenBayDto> layLichSuCapNhat(String maLichTrinh) {
+        if (!repository.tonTaiLichTrinh(maLichTrinh)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy lịch trình chuyến bay.");
         }
-        return repository.layDanhSach(keyword, loaiChuyenBay, trangThai, maHangHangKhong, tuNgay, denNgay);
+        return repository.layTatCaLichSuCapNhat(maLichTrinh);
     }
 
     public ChiTietChuyenBayDto layChiTiet(String maLichTrinh) {
@@ -105,6 +112,7 @@ public class ChuyenBayQuanTriService {
                 request.gioDuKienKhoiHanh(),
                 request.gioDuKienHaCanh()
         );
+        validateGioUocTinhCoBan(request.gioUocTinhKhoiHanh(), request.gioUocTinhHaCanh());
 
         String maChuyenBay = repository.layMaChuyenBayTheoLichTrinh(maLichTrinh);
         if (repository.tonTaiSoHieuChuyenBayKhac(request.soHieuChuyenBay().trim(), maChuyenBay)) {
@@ -149,6 +157,12 @@ public class ChuyenBayQuanTriService {
         if ("Đã xóa".equals(trangThai)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Lịch trình chuyến bay đã được xóa mềm trước đó.");
         }
+        if ("Hoàn thành".equals(trangThai)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Không được lưu trữ chuyến bay đã hoàn thành. Hãy giữ dữ liệu để phục vụ lịch sử và báo cáo.");
+        }
+        if (request == null || !hasText(request.lyDoXoa())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Vui lòng nhập lý do lưu trữ chuyến bay.");
+        }
         repository.xoaMemLichTrinh(maLichTrinh, request == null ? null : request.lyDoXoa());
     }
 
@@ -165,10 +179,9 @@ public class ChuyenBayQuanTriService {
                 "Đã lên lịch",
                 "Đang làm thủ tục",
                 "Đang bay",
-                "Đã hạ cánh",
-                "Hoàn thành",
                 "Chậm chuyến",
                 "Hủy chuyến",
+                "Hoàn thành",
                 "Đã xóa"
         );
     }
@@ -203,8 +216,14 @@ public class ChuyenBayQuanTriService {
         if (request.gioUocTinhKhoiHanh() != null && request.gioUocTinhHaCanh() != null && !request.gioUocTinhHaCanh().isAfter(request.gioUocTinhKhoiHanh())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Giờ ước tính hạ cánh phải lớn hơn giờ ước tính khởi hành.");
         }
-        if (request.gioThucTeKhoiHanh() != null && request.gioThucTeHaCanh() != null && !request.gioThucTeHaCanh().isAfter(request.gioThucTeKhoiHanh())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Giờ thực tế hạ cánh phải lớn hơn giờ thực tế khởi hành.");
+        if (request.gioThucTeKhoiHanh() != null && request.gioThucTeHaCanh() != null && request.gioThucTeHaCanh().isBefore(request.gioThucTeKhoiHanh())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Giờ thực tế hạ cánh phải lớn hơn hoặc bằng giờ thực tế khởi hành.");
+        }
+    }
+
+    private void validateGioUocTinhCoBan(LocalDateTime gioUocTinhKhoiHanh, LocalDateTime gioUocTinhHaCanh) {
+        if (gioUocTinhKhoiHanh != null && gioUocTinhHaCanh != null && !gioUocTinhHaCanh.isAfter(gioUocTinhKhoiHanh)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Giờ ước tính hạ cánh phải lớn hơn giờ ước tính khởi hành.");
         }
     }
 

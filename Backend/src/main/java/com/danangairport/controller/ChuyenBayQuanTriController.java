@@ -5,6 +5,7 @@ import com.danangairport.dto.CapNhatTinhHinhChuyenBayRequest;
 import com.danangairport.dto.ChiTietChuyenBayDto;
 import com.danangairport.dto.ChuyenBayDto;
 import com.danangairport.dto.ChuyenBayOptionDto;
+import com.danangairport.dto.LichSuCapNhatChuyenBayDto;
 import com.danangairport.dto.TaoChuyenBayRequest;
 import com.danangairport.dto.ThongKeChuyenBayDto;
 import com.danangairport.dto.XoaChuyenBayRequest;
@@ -44,13 +45,28 @@ public class ChuyenBayQuanTriController {
     @GetMapping
     public List<ChuyenBayDto> layDanhSach(
             @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String type,
             @RequestParam(required = false) String loaiChuyenBay,
+            @RequestParam(required = false) String status,
             @RequestParam(required = false) String trangThai,
+            @RequestParam(required = false) String airline,
             @RequestParam(required = false) String maHangHangKhong,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate tuNgay,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate denNgay
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate ngayBay,
+            @RequestParam(required = false) String gate,
+            @RequestParam(required = false) String terminal,
+            @RequestParam(required = false, defaultValue = "false") boolean includeArchived
     ) {
-        return service.layDanhSach(keyword, loaiChuyenBay, trangThai, maHangHangKhong, tuNgay, denNgay);
+        return service.layDanhSach(
+                keyword,
+                firstText(type, loaiChuyenBay),
+                firstText(status, trangThai),
+                firstText(airline, maHangHangKhong),
+                date != null ? date : ngayBay,
+                gate,
+                terminal,
+                includeArchived
+        );
     }
 
     @GetMapping("/{maLichTrinh}")
@@ -79,6 +95,20 @@ public class ChuyenBayQuanTriController {
         return ResponseEntity.ok(service.capNhatTinhHinh(maLichTrinh, request));
     }
 
+    @GetMapping("/{maLichTrinh}/history")
+    public List<LichSuCapNhatChuyenBayDto> layLichSuCapNhat(@PathVariable String maLichTrinh) {
+        return service.layLichSuCapNhat(maLichTrinh);
+    }
+
+    @PutMapping("/{maLichTrinh}/archive")
+    public ResponseEntity<Map<String, String>> luuTru(
+            @PathVariable String maLichTrinh,
+            @Valid @RequestBody(required = false) XoaChuyenBayRequest request
+    ) {
+        service.xoaMem(maLichTrinh, request);
+        return ResponseEntity.ok(Map.of("message", "Đã lưu trữ lịch trình chuyến bay thành công."));
+    }
+
     @DeleteMapping("/{maLichTrinh}")
     public ResponseEntity<Map<String, String>> xoaMem(
             @PathVariable String maLichTrinh,
@@ -101,5 +131,9 @@ public class ChuyenBayQuanTriController {
     @GetMapping("/statuses")
     public List<String> layTrangThaiChuyenBay() {
         return service.layTrangThaiChuyenBay();
+    }
+
+    private String firstText(String preferred, String fallback) {
+        return preferred != null && !preferred.isBlank() ? preferred : fallback;
     }
 }

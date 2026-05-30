@@ -14,8 +14,16 @@ import java.util.Set;
 
 @Service
 public class NguoiDungQuanTriService {
+    private static final String TRANG_THAI_HOAT_DONG = "Hoạt động";
+    private static final String TRANG_THAI_KHOA = "Khóa";
+    private static final String TRANG_THAI_NGUNG_SU_DUNG = "Ngừng sử dụng";
     private static final Set<String> VAI_TRO_HOP_LE = Set.of("Quản trị", "Điều phối", "Khách hàng");
-    private static final Set<String> TRANG_THAI_HOP_LE = Set.of("Hoạt động", "Khóa", "Ngừng sử dụng");
+    private static final Set<String> TRANG_THAI_HOP_LE = Set.of(
+            TRANG_THAI_HOAT_DONG,
+            TRANG_THAI_KHOA,
+            TRANG_THAI_NGUNG_SU_DUNG
+    );
+
     private final NguoiDungQuanTriRepository repository;
 
     public NguoiDungQuanTriService(NguoiDungQuanTriRepository repository) {
@@ -30,7 +38,7 @@ public class NguoiDungQuanTriService {
 
     public NguoiDungDto layChiTiet(String maTaiKhoan) {
         return repository.layChiTiet(maTaiKhoan).orElseThrow(
-                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Khong tim thay tai khoan")
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy tài khoản")
         );
     }
 
@@ -43,7 +51,7 @@ public class NguoiDungQuanTriService {
     }
 
     public List<String> layDanhSachTrangThai() {
-        return List.of("Hoạt động", "Khóa", "Ngừng sử dụng");
+        return List.of(TRANG_THAI_HOAT_DONG, TRANG_THAI_KHOA, TRANG_THAI_NGUNG_SU_DUNG);
     }
 
     public NguoiDungDto themNguoiDung(TaoNguoiDungRequest request) {
@@ -53,10 +61,10 @@ public class NguoiDungQuanTriService {
         validateTrangThai(request.getTrangThaiTaiKhoan());
 
         if (repository.tonTaiTenDangNhap(tenDangNhap)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ten dang nhap da ton tai");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tên đăng nhập đã tồn tại");
         }
         if (email != null && repository.tonTaiEmail(email)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email da ton tai");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email đã tồn tại");
         }
 
         String maMoi = repository.taoMaTaiKhoanMoi();
@@ -66,40 +74,43 @@ public class NguoiDungQuanTriService {
 
     public NguoiDungDto capNhatNguoiDung(String maTaiKhoan, CapNhatNguoiDungRequest request) {
         if (!repository.tonTaiMaTaiKhoan(maTaiKhoan)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Khong tim thay tai khoan");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy tài khoản");
         }
         String email = trimToNull(request.getEmail());
         validateVaiTro(request.getVaiTro());
         validateTrangThai(request.getTrangThaiTaiKhoan());
+        validateLyDoNeuCan(request.getTrangThaiTaiKhoan(), request.getLyDo());
         if (email != null && repository.tonTaiEmailKhacMa(email, maTaiKhoan)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email da ton tai");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email đã tồn tại");
         }
         repository.capNhatNguoiDung(maTaiKhoan, request);
         return layChiTiet(maTaiKhoan);
     }
 
-    public void khoaTaiKhoan(String maTaiKhoan) {
-        capNhatTrangThai(maTaiKhoan, "Khóa");
+    public void khoaTaiKhoan(String maTaiKhoan, String lyDo) {
+        validateLyDoBatBuoc(lyDo);
+        capNhatTrangThai(maTaiKhoan, TRANG_THAI_KHOA);
     }
 
     public void moKhoaTaiKhoan(String maTaiKhoan) {
-        capNhatTrangThai(maTaiKhoan, "Hoạt động");
+        capNhatTrangThai(maTaiKhoan, TRANG_THAI_HOAT_DONG);
     }
 
-    public void ngungSuDungTaiKhoan(String maTaiKhoan) {
-        capNhatTrangThai(maTaiKhoan, "Ngừng sử dụng");
+    public void ngungSuDungTaiKhoan(String maTaiKhoan, String lyDo) {
+        validateLyDoBatBuoc(lyDo);
+        capNhatTrangThai(maTaiKhoan, TRANG_THAI_NGUNG_SU_DUNG);
     }
 
     public void datLaiMatKhau(String maTaiKhoan, String matKhauMoi) {
         if (!repository.tonTaiMaTaiKhoan(maTaiKhoan)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Khong tim thay tai khoan");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy tài khoản");
         }
         repository.datLaiMatKhau(maTaiKhoan, matKhauMoi.trim());
     }
 
     private void capNhatTrangThai(String maTaiKhoan, String trangThai) {
         if (!repository.tonTaiMaTaiKhoan(maTaiKhoan)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Khong tim thay tai khoan");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy tài khoản");
         }
         repository.capNhatTrangThai(maTaiKhoan, trangThai);
     }
@@ -118,13 +129,25 @@ public class NguoiDungQuanTriService {
 
     private void validateVaiTro(String vaiTro) {
         if (vaiTro == null || !VAI_TRO_HOP_LE.contains(vaiTro.trim())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Vai tro khong hop le");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Vai trò không hợp lệ");
         }
     }
 
     private void validateTrangThai(String trangThai) {
         if (trangThai == null || !TRANG_THAI_HOP_LE.contains(trangThai.trim())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Trang thai tai khoan khong hop le");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Trạng thái tài khoản không hợp lệ");
+        }
+    }
+
+    private void validateLyDoNeuCan(String trangThai, String lyDo) {
+        if (TRANG_THAI_KHOA.equals(trangThai) || TRANG_THAI_NGUNG_SU_DUNG.equals(trangThai)) {
+            validateLyDoBatBuoc(lyDo);
+        }
+    }
+
+    private void validateLyDoBatBuoc(String lyDo) {
+        if (lyDo == null || lyDo.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Vui lòng nhập lý do khi khóa hoặc ngừng sử dụng tài khoản");
         }
     }
 
@@ -136,4 +159,3 @@ public class NguoiDungQuanTriService {
         return trimmed.isEmpty() ? null : trimmed;
     }
 }
-

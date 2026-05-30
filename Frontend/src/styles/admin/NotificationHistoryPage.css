@@ -107,7 +107,7 @@
 
 .notify-stats {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 14px;
   margin-bottom: 20px;
 }
@@ -197,11 +197,11 @@
 }
 
 .notify-filters--notifications {
-  grid-template-columns: minmax(220px, 1.5fr) minmax(150px, 1fr) minmax(150px, 1fr) minmax(170px, 1fr) 142px 142px auto;
+  grid-template-columns: minmax(240px, 1.5fr) repeat(3, minmax(160px, 1fr)) auto;
 }
 
 .notify-filters--history {
-  grid-template-columns: minmax(220px, 1.5fr) minmax(170px, 1fr) minmax(170px, 1fr) 142px 142px auto;
+  grid-template-columns: minmax(240px, 1.5fr) repeat(3, minmax(160px, 1fr)) auto;
 }
 
 .notify-filters label,
@@ -260,9 +260,17 @@
 
 .notify-table {
   width: 100%;
-  min-width: 1120px;
+  min-width: 1200px;
   border-collapse: collapse;
   background-color: #ffffff;
+}
+
+.notify-table--notifications {
+  min-width: 1420px;
+}
+
+.notify-table--history {
+  min-width: 1660px;
 }
 
 .notify-table th,
@@ -345,8 +353,30 @@
   background-color: #e0f2fe;
 }
 
+.notify-badge--scheduled,
 .notify-badge--muted,
 .notify-badge--neutral {
+  color: #475569;
+  background-color: #f1f5f9;
+}
+
+.notify-badge--flying,
+.notify-badge--sms {
+  color: #6d28d9;
+  background-color: #ede9fe;
+}
+
+.notify-badge--email {
+  color: #075985;
+  background-color: #e0f2fe;
+}
+
+.notify-badge--app {
+  color: #166534;
+  background-color: #dcfce7;
+}
+
+.notify-badge--system {
   color: #475569;
   background-color: #f1f5f9;
 }
@@ -401,9 +431,9 @@
 }
 
 .notify-modal {
-  width: min(920px, 100%);
-  max-height: calc(100vh - 48px);
-  overflow: auto;
+  width: min(850px, 100%);
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
   border-radius: 8px;
   background-color: #ffffff;
   box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28);
@@ -500,10 +530,6 @@
 }
 
 @media (max-width: 1280px) {
-  .notify-stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   .notify-filters--notifications,
   .notify-filters--history {
     grid-template-columns: repeat(3, minmax(0, 1fr));

@@ -7,7 +7,7 @@ async function callApi(url, options = {}) {
   });
 
   if (!response.ok) {
-    let message = "Co loi xay ra";
+    let message = "Có lỗi xảy ra";
     try {
       const data = await response.json();
       message = data.message || message;
@@ -74,8 +74,11 @@ export function moKhoaTaiKhoan(maTaiKhoan) {
   return callApi(`${BASE_URL}/${maTaiKhoan}/unlock`, { method: "PATCH" });
 }
 
-export function ngungSuDungTaiKhoan(maTaiKhoan) {
-  return callApi(`${BASE_URL}/${maTaiKhoan}/deactivate`, { method: "PATCH" });
+export function ngungSuDungTaiKhoan(maTaiKhoan, lyDo) {
+  return callApi(`${BASE_URL}/${maTaiKhoan}/deactivate`, {
+    method: "PATCH",
+    body: JSON.stringify({ lyDo }),
+  });
 }
 
 export function datLaiMatKhau(maTaiKhoan, matKhauMoi) {

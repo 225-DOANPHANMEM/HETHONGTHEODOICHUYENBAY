@@ -33,6 +33,10 @@ public record CapNhatChuyenBayRequest(
         LocalDateTime gioDuKienKhoiHanh,
 
         @NotNull(message = "Giờ dự kiến hạ cánh không được để trống")
-        LocalDateTime gioDuKienHaCanh
+        LocalDateTime gioDuKienHaCanh,
+
+        LocalDateTime gioUocTinhKhoiHanh,
+
+        LocalDateTime gioUocTinhHaCanh
 ) {
 }

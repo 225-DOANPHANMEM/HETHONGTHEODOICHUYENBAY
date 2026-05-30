@@ -1,10 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import AdminLayout from "../../layouts/AdminLayout.jsx";
 import {
-  capNhatBangChuyen,
-  capNhatCong,
-  capNhatHangHangKhong,
-  capNhatNhaGa,
   capNhatTrangThaiBangChuyen,
   capNhatTrangThaiCong,
   layChiTietBangChuyen,
@@ -19,14 +15,6 @@ import {
   layNhaGaOptions,
   layThongKeDanhMucVanHanh,
   layTrangThaiTaiNguyen,
-  themBangChuyen,
-  themCong,
-  themHangHangKhong,
-  themNhaGa,
-  xoaBangChuyen,
-  xoaCong,
-  xoaHangHangKhong,
-  xoaNhaGa,
 } from "../../api/danhMucVanHanhApi.js";
 import "../../styles/admin/danhMucVanHanh.css";
 
@@ -38,14 +26,14 @@ const TABS = [
 ];
 
 const STAT_CARDS = [
-  { label: "Hãng hàng không", key: "tongHangHangKhong", icon: "fa-solid fa-plane" },
-  { label: "Nhà ga", key: "tongNhaGa", icon: "fa-solid fa-building" },
-  { label: "Cổng", key: "tongCong", icon: "fa-solid fa-door-open" },
-  { label: "Băng chuyền", key: "tongBangChuyen", icon: "fa-solid fa-suitcase-rolling" },
-  { label: "Cổng sẵn sàng", key: "soCongSanSang", icon: "fa-solid fa-circle-check" },
-  { label: "Cổng bảo trì", key: "soCongBaoTri", icon: "fa-solid fa-screwdriver-wrench" },
-  { label: "Băng chuyền sẵn sàng", key: "soBangChuyenSanSang", icon: "fa-solid fa-circle-check" },
-  { label: "Băng chuyền bảo trì", key: "soBangChuyenBaoTri", icon: "fa-solid fa-screwdriver-wrench" },
+  { label: "Hãng hàng không", key: "tongHangHangKhong", icon: "fa-solid fa-plane", tone: "blue", target: { tab: "airlines" } },
+  { label: "Nhà ga", key: "tongNhaGa", icon: "fa-solid fa-building", tone: "indigo", target: { tab: "terminals" } },
+  { label: "Cổng", key: "tongCong", icon: "fa-solid fa-door-open", tone: "cyan", target: { tab: "gates" } },
+  { label: "Băng chuyền", key: "tongBangChuyen", icon: "fa-solid fa-suitcase-rolling", tone: "violet", target: { tab: "baggage" } },
+  { label: "Cổng sẵn sàng", key: "soCongSanSang", icon: "fa-solid fa-circle-check", tone: "green", target: { tab: "gates", filter: "trangThaiCong", value: "Sẵn sàng" } },
+  { label: "Cổng bảo trì", key: "soCongBaoTri", icon: "fa-solid fa-screwdriver-wrench", tone: "amber", target: { tab: "gates", filter: "trangThaiCong", value: "Bảo trì" } },
+  { label: "Băng chuyền sẵn sàng", key: "soBangChuyenSanSang", icon: "fa-solid fa-circle-check", tone: "green", target: { tab: "baggage", filter: "trangThaiBangChuyen", value: "Sẵn sàng" } },
+  { label: "Băng chuyền bảo trì", key: "soBangChuyenBaoTri", icon: "fa-solid fa-screwdriver-wrench", tone: "amber", target: { tab: "baggage", filter: "trangThaiBangChuyen", value: "Bảo trì" } },
 ];
 
 const INITIAL_FILTERS = {
@@ -70,7 +58,6 @@ function DanhMucVanHanh({ onNavigate }) {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [modal, setModal] = useState(null);
-  const [formData, setFormData] = useState({});
 
   const currentTab = useMemo(
     () => TABS.find((tab) => tab.key === activeTab) || TABS[0],
@@ -202,19 +189,23 @@ function DanhMucVanHanh({ onNavigate }) {
     setModal(null);
   };
 
+  const handleStatFilter = (card) => {
+    const nextFilters = card.target?.filter
+      ? { ...INITIAL_FILTERS, [card.target.filter]: card.target.value }
+      : INITIAL_FILTERS;
+
+    setActiveTab(card.target.tab);
+    setKeyword("");
+    setFilters(nextFilters);
+    setLoading(true);
+    setError("");
+    setSuccess("");
+    setModal(null);
+  };
+
   const updateFilter = (name, value) => {
     setLoading(true);
     setFilters((current) => ({ ...current, [name]: value }));
-  };
-
-  const openCreateModal = () => {
-    setFormData(createEmptyForm(activeTab, terminalTypes, resourceStatuses, terminalOptions));
-    setModal({ type: "form", mode: "create", tab: activeTab, item: null });
-  };
-
-  const openEditModal = (item) => {
-    setFormData(mapItemToForm(activeTab, item));
-    setModal({ type: "form", mode: "edit", tab: activeTab, item });
   };
 
   const openDetailModal = async (item) => {
@@ -230,64 +221,9 @@ function DanhMucVanHanh({ onNavigate }) {
     }
   };
 
-  const openDeleteModal = (item) => {
-    setModal({ type: "delete", tab: activeTab, item });
-  };
-
   const closeModal = () => {
     if (!saving) {
       setModal(null);
-      setFormData({});
-    }
-  };
-
-  const handleFormChange = (event) => {
-    const { name, value } = event.target;
-    setFormData((current) => ({ ...current, [name]: value }));
-  };
-
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    if (!modal) return;
-
-    setSaving(true);
-    setError("");
-    setSuccess("");
-    try {
-      const api = getTabApi(modal.tab);
-      const payload = normalizePayload(modal.tab, formData);
-      if (modal.mode === "edit") {
-        await api.update(getRowId(modal.tab, modal.item), payload);
-        setSuccess("Cập nhật dữ liệu thành công.");
-      } else {
-        await api.create(payload);
-        setSuccess("Thêm mới dữ liệu thành công.");
-      }
-      setModal(null);
-      setFormData({});
-      await refreshAll();
-    } catch (err) {
-      setError(err.message || "Không lưu được dữ liệu.");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!modal) return;
-
-    setSaving(true);
-    setError("");
-    setSuccess("");
-    try {
-      await getTabApi(modal.tab).remove(getRowId(modal.tab, modal.item));
-      setSuccess("Xóa dữ liệu thành công.");
-      setModal(null);
-      await refreshAll();
-    } catch (err) {
-      setError(err.message || "Không xóa được dữ liệu.");
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -337,7 +273,12 @@ function DanhMucVanHanh({ onNavigate }) {
 
         <section className="operation-stats" aria-label="Thống kê danh mục vận hành">
           {STAT_CARDS.map((card) => (
-            <article className="operation-stat" key={card.key}>
+            <button
+              className={`operation-stat operation-stat--${card.tone}`}
+              key={card.key}
+              type="button"
+              onClick={() => handleStatFilter(card)}
+            >
               <span className="operation-stat__icon">
                 <i className={card.icon} aria-hidden="true" />
               </span>
@@ -345,7 +286,7 @@ function DanhMucVanHanh({ onNavigate }) {
                 <p>{card.label}</p>
                 <strong>{statistics?.[card.key] ?? 0}</strong>
               </div>
-            </article>
+            </button>
           ))}
         </section>
 
@@ -370,10 +311,6 @@ function DanhMucVanHanh({ onNavigate }) {
                 <h2>{currentTab.label}</h2>
                 <p>{rows.length} bản ghi</p>
               </div>
-              <button className="operation-button operation-button--primary" type="button" onClick={openCreateModal}>
-                <i className="fa-solid fa-plus" aria-hidden="true" />
-                Thêm mới
-              </button>
             </div>
 
             <div className="operation-toolbar">
@@ -404,32 +341,14 @@ function DanhMucVanHanh({ onNavigate }) {
                   <span>Không có dữ liệu phù hợp.</span>
                 </div>
               ) : (
-                renderTable(activeTab, rows, resourceStatuses, openDetailModal, openEditModal, openDeleteModal, handleQuickStatus)
+                renderTable(activeTab, rows, resourceStatuses, openDetailModal, handleQuickStatus)
               )}
             </div>
           </div>
         </section>
 
-        {modal?.type === "form" && (
-          <FormModal
-            modal={modal}
-            formData={formData}
-            terminalTypes={terminalTypes}
-            resourceStatuses={resourceStatuses}
-            terminalOptions={terminalOptions}
-            saving={saving}
-            onChange={handleFormChange}
-            onClose={closeModal}
-            onSubmit={handleSubmit}
-          />
-        )}
-
         {modal?.type === "detail" && (
           <DetailModal modal={modal} onClose={closeModal} />
-        )}
-
-        {modal?.type === "delete" && (
-          <DeleteModal modal={modal} saving={saving} onClose={closeModal} onDelete={handleDelete} />
         )}
       </section>
     </AdminLayout>
@@ -500,7 +419,7 @@ function renderFilters(activeTab, filters, updateFilter, terminalTypes, resource
   );
 }
 
-function renderTable(activeTab, rows, resourceStatuses, onView, onEdit, onDelete, onQuickStatus) {
+function renderTable(activeTab, rows, resourceStatuses, onView, onQuickStatus) {
   if (activeTab === "airlines") {
     return (
       <table className="operation-table">
@@ -511,7 +430,6 @@ function renderTable(activeTab, rows, resourceStatuses, onView, onEdit, onDelete
             <th>Tên hãng hàng không</th>
             <th>Quốc gia</th>
             <th>Số chuyến bay</th>
-            <th>Hành động</th>
           </tr>
         </thead>
         <tbody>
@@ -522,7 +440,6 @@ function renderTable(activeTab, rows, resourceStatuses, onView, onEdit, onDelete
               <td>{item.tenHangHangKhong}</td>
               <td>{item.quocGia || "-"}</td>
               <td>{item.soChuyenBay ?? 0}</td>
-              <td>{renderActions(item, onView, onEdit, onDelete)}</td>
             </tr>
           ))}
         </tbody>
@@ -553,7 +470,7 @@ function renderTable(activeTab, rows, resourceStatuses, onView, onEdit, onDelete
               <td>{item.moTa || "-"}</td>
               <td>{item.soCong ?? 0}</td>
               <td>{item.soBangChuyen ?? 0}</td>
-              <td>{renderActions(item, onView, onEdit, onDelete)}</td>
+              <td>{renderReadOnlyActions(item, onView)}</td>
             </tr>
           ))}
         </tbody>
@@ -595,7 +512,7 @@ function renderTable(activeTab, rows, resourceStatuses, onView, onEdit, onDelete
                   ))}
                 </select>
               </td>
-              <td>{renderActions(item, onView, onEdit, onDelete)}</td>
+              <td>{renderReadOnlyActions(item, onView)}</td>
             </tr>
           );
         })}
@@ -604,128 +521,13 @@ function renderTable(activeTab, rows, resourceStatuses, onView, onEdit, onDelete
   );
 }
 
-function renderActions(item, onView, onEdit, onDelete) {
+function renderReadOnlyActions(item, onView) {
   return (
     <div className="operation-actions">
       <button type="button" title="Xem" aria-label="Xem" onClick={() => onView(item)}>
         <i className="fa-solid fa-eye" aria-hidden="true" />
       </button>
-      <button type="button" title="Sửa" aria-label="Sửa" onClick={() => onEdit(item)}>
-        <i className="fa-solid fa-pen-to-square" aria-hidden="true" />
-      </button>
-      <button className="operation-actions__danger" type="button" title="Xóa" aria-label="Xóa" onClick={() => onDelete(item)}>
-        <i className="fa-solid fa-trash" aria-hidden="true" />
-      </button>
     </div>
-  );
-}
-
-function FormModal({ modal, formData, terminalTypes, resourceStatuses, terminalOptions, saving, onChange, onClose, onSubmit }) {
-  const title = modal.mode === "edit" ? `Sửa ${getTabLabel(modal.tab).toLowerCase()}` : `Thêm ${getTabLabel(modal.tab).toLowerCase()}`;
-
-  return (
-    <div className="operation-modal-backdrop" role="presentation">
-      <div className="operation-modal" role="dialog" aria-modal="true" aria-label={title}>
-        <form onSubmit={onSubmit}>
-          <div className="operation-modal__header">
-            <h3>{title}</h3>
-            <button type="button" aria-label="Đóng" onClick={onClose}>
-              <i className="fa-solid fa-xmark" aria-hidden="true" />
-            </button>
-          </div>
-          <div className="operation-modal__body">
-            {renderFormFields(modal.tab, formData, terminalTypes, resourceStatuses, terminalOptions, onChange)}
-          </div>
-          <div className="operation-modal__footer">
-            <button className="operation-button operation-button--secondary" type="button" onClick={onClose} disabled={saving}>
-              Hủy
-            </button>
-            <button className="operation-button operation-button--primary" type="submit" disabled={saving}>
-              <i className={saving ? "fa-solid fa-spinner fa-spin" : "fa-solid fa-floppy-disk"} aria-hidden="true" />
-              Lưu
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}
-
-function renderFormFields(tab, formData, terminalTypes, resourceStatuses, terminalOptions, onChange) {
-  if (tab === "airlines") {
-    return (
-      <>
-        <label className="operation-field">
-          <span>Mã hãng</span>
-          <input name="maHang" value={formData.maHang || ""} onChange={onChange} required maxLength={10} />
-        </label>
-        <label className="operation-field">
-          <span>Tên hãng hàng không</span>
-          <input name="tenHangHangKhong" value={formData.tenHangHangKhong || ""} onChange={onChange} required maxLength={100} />
-        </label>
-        <label className="operation-field">
-          <span>Quốc gia</span>
-          <input name="quocGia" value={formData.quocGia || ""} onChange={onChange} maxLength={50} />
-        </label>
-      </>
-    );
-  }
-
-  if (tab === "terminals") {
-    return (
-      <>
-        <label className="operation-field">
-          <span>Tên nhà ga</span>
-          <input name="tenNhaGa" value={formData.tenNhaGa || ""} onChange={onChange} required maxLength={100} />
-        </label>
-        <label className="operation-field">
-          <span>Loại nhà ga</span>
-          <select name="loaiNhaGa" value={formData.loaiNhaGa || ""} onChange={onChange} required>
-            {terminalTypes.map((type) => (
-              <option key={type} value={type}>{type}</option>
-            ))}
-          </select>
-        </label>
-        <label className="operation-field operation-field--full">
-          <span>Mô tả</span>
-          <textarea name="moTa" value={formData.moTa || ""} onChange={onChange} maxLength={255} rows={3} />
-        </label>
-      </>
-    );
-  }
-
-  const isGate = tab === "gates";
-  return (
-    <>
-      <label className="operation-field">
-        <span>Nhà ga</span>
-        <select name="maNhaGa" value={formData.maNhaGa || ""} onChange={onChange} required>
-          {terminalOptions.map((terminal) => (
-            <option key={terminal.maNhaGa} value={terminal.maNhaGa}>
-              {terminal.tenNhaGa}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label className="operation-field">
-        <span>{isGate ? "Tên cổng" : "Tên băng chuyền"}</span>
-        <input
-          name={isGate ? "tenCong" : "tenBangChuyenHanhLy"}
-          value={isGate ? formData.tenCong || "" : formData.tenBangChuyenHanhLy || ""}
-          onChange={onChange}
-          required
-          maxLength={100}
-        />
-      </label>
-      <label className="operation-field">
-        <span>Trạng thái</span>
-        <select name={isGate ? "trangThaiCong" : "trangThaiBangChuyen"} value={isGate ? formData.trangThaiCong || "" : formData.trangThaiBangChuyen || ""} onChange={onChange} required>
-          {resourceStatuses.map((status) => (
-            <option key={status} value={status}>{status}</option>
-          ))}
-        </select>
-      </label>
-    </>
   );
 }
 
@@ -758,148 +560,26 @@ function DetailModal({ modal, onClose }) {
   );
 }
 
-function DeleteModal({ modal, saving, onClose, onDelete }) {
-  const label = getItemDisplayName(modal.tab, modal.item);
-  const isResource = modal.tab === "gates" || modal.tab === "baggage";
-  return (
-    <div className="operation-modal-backdrop" role="presentation">
-      <div className="operation-modal operation-modal--delete" role="dialog" aria-modal="true" aria-label="Xác nhận xóa">
-        <div className="operation-modal__header">
-          <h3>Xác nhận xóa</h3>
-          <button type="button" aria-label="Đóng" onClick={onClose}>
-            <i className="fa-solid fa-xmark" aria-hidden="true" />
-          </button>
-        </div>
-        <div className="operation-delete">
-          <i className="fa-solid fa-triangle-exclamation" aria-hidden="true" />
-          <p>Bạn có chắc muốn xóa <strong>{label}</strong>?</p>
-          {isResource && <span>Nếu dữ liệu đã được dùng trong vận hành, hãy đổi trạng thái sang "Đóng" hoặc "Bảo trì".</span>}
-        </div>
-        <div className="operation-modal__footer">
-          <button className="operation-button operation-button--secondary" type="button" onClick={onClose} disabled={saving}>
-            Hủy
-          </button>
-          <button className="operation-button operation-button--danger" type="button" onClick={onDelete} disabled={saving}>
-            <i className={saving ? "fa-solid fa-spinner fa-spin" : "fa-solid fa-trash"} aria-hidden="true" />
-            Xóa
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function getTabApi(tab) {
   const map = {
     airlines: {
       list: layDanhSachHangHangKhong,
       detail: layChiTietHangHangKhong,
-      create: themHangHangKhong,
-      update: capNhatHangHangKhong,
-      remove: xoaHangHangKhong,
     },
     terminals: {
       list: layDanhSachNhaGa,
       detail: layChiTietNhaGa,
-      create: themNhaGa,
-      update: capNhatNhaGa,
-      remove: xoaNhaGa,
     },
     gates: {
       list: layDanhSachCong,
       detail: layChiTietCong,
-      create: themCong,
-      update: capNhatCong,
-      remove: xoaCong,
     },
     baggage: {
       list: layDanhSachBangChuyen,
       detail: layChiTietBangChuyen,
-      create: themBangChuyen,
-      update: capNhatBangChuyen,
-      remove: xoaBangChuyen,
     },
   };
   return map[tab];
-}
-
-function createEmptyForm(tab, terminalTypes, resourceStatuses, terminalOptions) {
-  if (tab === "airlines") {
-    return { maHang: "", tenHangHangKhong: "", quocGia: "" };
-  }
-  if (tab === "terminals") {
-    return { tenNhaGa: "", loaiNhaGa: terminalTypes[0] || "", moTa: "" };
-  }
-  if (tab === "gates") {
-    return {
-      maNhaGa: terminalOptions[0]?.maNhaGa || "",
-      tenCong: "",
-      trangThaiCong: resourceStatuses[0] || "",
-    };
-  }
-  return {
-    maNhaGa: terminalOptions[0]?.maNhaGa || "",
-    tenBangChuyenHanhLy: "",
-    trangThaiBangChuyen: resourceStatuses[0] || "",
-  };
-}
-
-function mapItemToForm(tab, item) {
-  if (tab === "airlines") {
-    return {
-      maHang: item.maHang || "",
-      tenHangHangKhong: item.tenHangHangKhong || "",
-      quocGia: item.quocGia || "",
-    };
-  }
-  if (tab === "terminals") {
-    return {
-      tenNhaGa: item.tenNhaGa || "",
-      loaiNhaGa: item.loaiNhaGa || "",
-      moTa: item.moTa || "",
-    };
-  }
-  if (tab === "gates") {
-    return {
-      maNhaGa: item.maNhaGa || "",
-      tenCong: item.tenCong || "",
-      trangThaiCong: item.trangThaiCong || "",
-    };
-  }
-  return {
-    maNhaGa: item.maNhaGa || "",
-    tenBangChuyenHanhLy: item.tenBangChuyenHanhLy || "",
-    trangThaiBangChuyen: item.trangThaiBangChuyen || "",
-  };
-}
-
-function normalizePayload(tab, data) {
-  if (tab === "airlines") {
-    return {
-      maHang: data.maHang?.trim() || "",
-      tenHangHangKhong: data.tenHangHangKhong?.trim() || "",
-      quocGia: data.quocGia?.trim() || "",
-    };
-  }
-  if (tab === "terminals") {
-    return {
-      tenNhaGa: data.tenNhaGa?.trim() || "",
-      loaiNhaGa: data.loaiNhaGa || "",
-      moTa: data.moTa?.trim() || "",
-    };
-  }
-  if (tab === "gates") {
-    return {
-      maNhaGa: data.maNhaGa || "",
-      tenCong: data.tenCong?.trim() || "",
-      trangThaiCong: data.trangThaiCong || "",
-    };
-  }
-  return {
-    maNhaGa: data.maNhaGa || "",
-    tenBangChuyenHanhLy: data.tenBangChuyenHanhLy?.trim() || "",
-    trangThaiBangChuyen: data.trangThaiBangChuyen || "",
-  };
 }
 
 function getRowId(tab, item) {
@@ -911,13 +591,6 @@ function getRowId(tab, item) {
 
 function getTabLabel(tab) {
   return TABS.find((item) => item.key === tab)?.label || "";
-}
-
-function getItemDisplayName(tab, item) {
-  if (tab === "airlines") return item.tenHangHangKhong;
-  if (tab === "terminals") return item.tenNhaGa;
-  if (tab === "gates") return item.tenCong;
-  return item.tenBangChuyenHanhLy;
 }
 
 function getDetailFields(tab, item) {

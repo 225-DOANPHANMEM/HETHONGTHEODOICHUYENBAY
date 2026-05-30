@@ -34,23 +34,27 @@ public class ChuyenBayQuanTriRepository {
 
     public ThongKeChuyenBayDto thongKe() {
         return new ThongKeChuyenBayDto(
-                dem("SELECT COUNT(*) FROM CHUYENBAY"),
-                dem("SELECT COUNT(*) FROM LICHTRINH"),
-                dem("SELECT COUNT(*) FROM CHUYENBAY WHERE LoaiChuyenBay = ?", "Đến"),
-                dem("SELECT COUNT(*) FROM CHUYENBAY WHERE LoaiChuyenBay = ?", "Đi"),
+                dem("SELECT COUNT(DISTINCT cb.MaChuyenBay) FROM LICHTRINH lt JOIN CHUYENBAY cb ON lt.MaChuyenBay = cb.MaChuyenBay WHERE lt.TrangThaiHienTai <> N'Đã xóa'"),
+                dem("SELECT COUNT(*) FROM LICHTRINH WHERE TrangThaiHienTai <> N'Đã xóa'"),
+                dem("SELECT COUNT(*) FROM LICHTRINH lt JOIN CHUYENBAY cb ON lt.MaChuyenBay = cb.MaChuyenBay WHERE cb.LoaiChuyenBay = ? AND lt.TrangThaiHienTai <> N'Đã xóa'",
+                        "Đến"),
+                dem("SELECT COUNT(*) FROM LICHTRINH lt JOIN CHUYENBAY cb ON lt.MaChuyenBay = cb.MaChuyenBay WHERE cb.LoaiChuyenBay = ? AND lt.TrangThaiHienTai <> N'Đã xóa'",
+                        "Đi"),
                 demTrangThai("Đã lên lịch"),
                 demTrangThai("Đang làm thủ tục"),
                 demTrangThai("Đang bay"),
+                dem("SELECT COUNT(*) FROM LICHTRINH WHERE TrangThaiHienTai IN (N'Đã lên lịch', N'Đang làm thủ tục', N'Đang bay', N'Chậm chuyến')"),
                 demTrangThai("Đã hạ cánh"),
                 demTrangThai("Hoàn thành"),
                 demTrangThai("Chậm chuyến"),
                 demTrangThai("Hủy chuyến"),
-                demTrangThai("Đã xóa")
-        );
+                dem("SELECT COUNT(*) FROM LICHTRINH WHERE TrangThaiHienTai IN (N'Chậm chuyến', N'Hủy chuyến')"),
+                demTrangThai("Đã xóa"));
     }
 
     public List<ChuyenBayDto> layDanhSach(String keyword, String loaiChuyenBay, String trangThai,
-                                           String maHangHangKhong, LocalDate tuNgay, LocalDate denNgay) {
+            String maHangHangKhong, LocalDate ngayBay, String maCong,
+            String maNhaGa, boolean includeArchived) {
         StringBuilder sql = new StringBuilder("""
                 SELECT
                     cb.MaChuyenBay,
@@ -71,30 +75,54 @@ public class ChuyenBayQuanTriRepository {
                     lt.TrangThaiHienTai,
                     lt.SoPhutCham,
                     lt.LyDoChamHoacHuy,
+                    c.MaCong,
                     c.TenCong,
-                    bc.TenBangChuyenHanhLy
+                    c.TenNhaGa,
+                    c.ThoiGianBatDauSuDungCong,
+                    c.ThoiGianKetThucSuDungCong,
+                    bc.MaBangChuyenHanhLy,
+                    bc.TenBangChuyenHanhLy,
+                    bc.TenNhaGaBangChuyen,
+                    bc.ThoiGianBatDauSuDungBangChuyen,
+                    bc.ThoiGianKetThucSuDungBangChuyen
                 FROM LICHTRINH lt
                 JOIN CHUYENBAY cb ON lt.MaChuyenBay = cb.MaChuyenBay
                 JOIN HANGHANGKHONG hh ON cb.MaHangHangKhong = hh.MaHangHangKhong
                 OUTER APPLY (
-                    SELECT TOP 1 cg.TenCong
+                    SELECT TOP 1
+                        cg.MaCong,
+                        cg.TenCong,
+                        ng.TenNhaGa,
+                        pcc.ThoiGianBatDauSuDung AS ThoiGianBatDauSuDungCong,
+                        pcc.ThoiGianKetThucSuDung AS ThoiGianKetThucSuDungCong
                     FROM PHANCONGCONG pcc
                     JOIN CONG cg ON pcc.MaCong = cg.MaCong
+                    JOIN NHAGA ng ON cg.MaNhaGa = ng.MaNhaGa
                     WHERE pcc.MaLichTrinh = lt.MaLichTrinh
                       AND pcc.DangHienHanh = 1
                     ORDER BY pcc.ThoiGianBatDauSuDung DESC
                 ) c
                 OUTER APPLY (
-                    SELECT TOP 1 bchl.TenBangChuyenHanhLy
+                    SELECT TOP 1
+                        bchl.MaBangChuyenHanhLy,
+                        bchl.TenBangChuyenHanhLy,
+                        ngbc.TenNhaGa AS TenNhaGaBangChuyen,
+                        pcbc.ThoiGianBatDauSuDung AS ThoiGianBatDauSuDungBangChuyen,
+                        pcbc.ThoiGianKetThucSuDung AS ThoiGianKetThucSuDungBangChuyen
                     FROM PHANCONGBANGCHUYEN pcbc
                     JOIN BANGCHUYENHANHLY bchl ON pcbc.MaBangChuyenHanhLy = bchl.MaBangChuyenHanhLy
+                    JOIN NHAGA ngbc ON bchl.MaNhaGa = ngbc.MaNhaGa
                     WHERE pcbc.MaLichTrinh = lt.MaLichTrinh
                       AND pcbc.DangHienHanh = 1
                     ORDER BY pcbc.ThoiGianBatDauSuDung DESC
                 ) bc
-                WHERE lt.TrangThaiHienTai <> N'Đã xóa'
+                WHERE 1 = 1
                 """);
         List<Object> params = new ArrayList<>();
+
+        if (!includeArchived) {
+            sql.append(" AND lt.TrangThaiHienTai <> N'Đã xóa'");
+        }
 
         if (hasText(keyword)) {
             sql.append("""
@@ -123,13 +151,18 @@ public class ChuyenBayQuanTriRepository {
             sql.append(" AND cb.MaHangHangKhong = ?");
             params.add(maHangHangKhong.trim());
         }
-        if (tuNgay != null) {
-            sql.append(" AND CAST(lt.NgayBay AS DATE) >= ?");
-            params.add(Date.valueOf(tuNgay));
+        if (ngayBay != null) {
+            sql.append(" AND CAST(lt.NgayBay AS DATE) = ?");
+            params.add(Date.valueOf(ngayBay));
         }
-        if (denNgay != null) {
-            sql.append(" AND CAST(lt.NgayBay AS DATE) <= ?");
-            params.add(Date.valueOf(denNgay));
+        if (hasText(maCong)) {
+            sql.append(" AND c.MaCong = ?");
+            params.add(maCong.trim());
+        }
+        if (hasText(maNhaGa)) {
+            sql.append(" AND (c.TenNhaGa = ? OR bc.TenNhaGaBangChuyen = ?)");
+            params.add(maNhaGa.trim());
+            params.add(maNhaGa.trim());
         }
 
         sql.append(" ORDER BY lt.NgayBay DESC, lt.GioDuKienKhoiHanh DESC");
@@ -157,22 +190,42 @@ public class ChuyenBayQuanTriRepository {
                     lt.TrangThaiHienTai,
                     lt.SoPhutCham,
                     lt.LyDoChamHoacHuy,
+                    c.MaCong,
                     c.TenCong,
-                    bc.TenBangChuyenHanhLy
+                    c.TenNhaGa,
+                    c.ThoiGianBatDauSuDungCong,
+                    c.ThoiGianKetThucSuDungCong,
+                    bc.MaBangChuyenHanhLy,
+                    bc.TenBangChuyenHanhLy,
+                    bc.TenNhaGaBangChuyen,
+                    bc.ThoiGianBatDauSuDungBangChuyen,
+                    bc.ThoiGianKetThucSuDungBangChuyen
                 FROM LICHTRINH lt
                 JOIN CHUYENBAY cb ON lt.MaChuyenBay = cb.MaChuyenBay
                 JOIN HANGHANGKHONG hh ON cb.MaHangHangKhong = hh.MaHangHangKhong
                 OUTER APPLY (
-                    SELECT TOP 1 cg.TenCong
+                    SELECT TOP 1
+                        cg.MaCong,
+                        cg.TenCong,
+                        ng.TenNhaGa,
+                        pcc.ThoiGianBatDauSuDung AS ThoiGianBatDauSuDungCong,
+                        pcc.ThoiGianKetThucSuDung AS ThoiGianKetThucSuDungCong
                     FROM PHANCONGCONG pcc
                     JOIN CONG cg ON pcc.MaCong = cg.MaCong
+                    JOIN NHAGA ng ON cg.MaNhaGa = ng.MaNhaGa
                     WHERE pcc.MaLichTrinh = lt.MaLichTrinh AND pcc.DangHienHanh = 1
                     ORDER BY pcc.ThoiGianBatDauSuDung DESC
                 ) c
                 OUTER APPLY (
-                    SELECT TOP 1 bchl.TenBangChuyenHanhLy
+                    SELECT TOP 1
+                        bchl.MaBangChuyenHanhLy,
+                        bchl.TenBangChuyenHanhLy,
+                        ngbc.TenNhaGa AS TenNhaGaBangChuyen,
+                        pcbc.ThoiGianBatDauSuDung AS ThoiGianBatDauSuDungBangChuyen,
+                        pcbc.ThoiGianKetThucSuDung AS ThoiGianKetThucSuDungBangChuyen
                     FROM PHANCONGBANGCHUYEN pcbc
                     JOIN BANGCHUYENHANHLY bchl ON pcbc.MaBangChuyenHanhLy = bchl.MaBangChuyenHanhLy
+                    JOIN NHAGA ngbc ON bchl.MaNhaGa = ngbc.MaNhaGa
                     WHERE pcbc.MaLichTrinh = lt.MaLichTrinh AND pcbc.DangHienHanh = 1
                     ORDER BY pcbc.ThoiGianBatDauSuDung DESC
                 ) bc
@@ -210,8 +263,38 @@ public class ChuyenBayQuanTriRepository {
                 toInteger(rs.getObject("SoPhutChamMoi")),
                 rs.getString("LyDoCapNhat"),
                 rs.getString("NoiDungCapNhat"),
-                formatTimestamp(rs.getTimestamp("ThoiGianCapNhat"))
-        ), maLichTrinh);
+                formatTimestamp(rs.getTimestamp("ThoiGianCapNhat"))), maLichTrinh);
+    }
+
+    public List<LichSuCapNhatChuyenBayDto> layTatCaLichSuCapNhat(String maLichTrinh) {
+        String sql = """
+                SELECT
+                    ls.MaLichSuCapNhat,
+                    tk.TenDangNhap,
+                    ls.TrangThaiCu,
+                    ls.TrangThaiMoi,
+                    ls.GioUocTinhCu,
+                    ls.GioUocTinhMoi,
+                    ls.SoPhutChamMoi,
+                    ls.LyDoCapNhat,
+                    ls.NoiDungCapNhat,
+                    ls.ThoiGianCapNhat
+                FROM LICHSUCAPNHAT ls
+                JOIN TAIKHOAN tk ON ls.MaTaiKhoan = tk.MaTaiKhoan
+                WHERE ls.MaLichTrinh = ?
+                ORDER BY ls.ThoiGianCapNhat DESC
+                """;
+        return jdbcTemplate.query(sql, (rs, rowNum) -> new LichSuCapNhatChuyenBayDto(
+                rs.getString("MaLichSuCapNhat"),
+                rs.getString("TenDangNhap"),
+                rs.getString("TrangThaiCu"),
+                rs.getString("TrangThaiMoi"),
+                formatTimestamp(rs.getTimestamp("GioUocTinhCu")),
+                formatTimestamp(rs.getTimestamp("GioUocTinhMoi")),
+                toInteger(rs.getObject("SoPhutChamMoi")),
+                rs.getString("LyDoCapNhat"),
+                rs.getString("NoiDungCapNhat"),
+                formatTimestamp(rs.getTimestamp("ThoiGianCapNhat"))), maLichTrinh);
     }
 
     public List<ThongBaoChuyenBayDto> layThongBao(String maLichTrinh) {
@@ -235,8 +318,7 @@ public class ChuyenBayQuanTriRepository {
                 formatTimestamp(rs.getTimestamp("GioUocTinhMoi")),
                 rs.getString("PhuongThucGui"),
                 rs.getString("TrangThaiGui"),
-                formatTimestamp(rs.getTimestamp("ThoiGianGui"))
-        ), maLichTrinh);
+                formatTimestamp(rs.getTimestamp("ThoiGianGui"))), maLichTrinh);
     }
 
     public List<ChuyenBayOptionDto> layHangHangKhongOptions() {
@@ -248,8 +330,7 @@ public class ChuyenBayQuanTriRepository {
         return jdbcTemplate.query(sql, (rs, rowNum) -> new ChuyenBayOptionDto(
                 rs.getString("MaHangHangKhong"),
                 rs.getString("MaHang"),
-                rs.getString("TenHangHangKhong")
-        ));
+                rs.getString("TenHangHangKhong")));
     }
 
     public void themChuyenBayVaLichTrinh(String maChuyenBay, String maLichTrinh, TaoChuyenBayRequest request) {
@@ -302,12 +383,20 @@ public class ChuyenBayQuanTriRepository {
 
         jdbcTemplate.update("""
                 UPDATE LICHTRINH
-                SET NgayBay = ?, GioDuKienKhoiHanh = ?, GioDuKienHaCanh = ?
+                SET NgayBay = ?,
+                    GioDuKienKhoiHanh = ?,
+                    GioDuKienHaCanh = ?,
+                    GioUocTinhKhoiHanh = ?,
+                    GioUocTinhHaCanh = ?
                 WHERE MaLichTrinh = ?
                 """,
                 Date.valueOf(request.ngayBay()),
                 Timestamp.valueOf(request.gioDuKienKhoiHanh()),
                 Timestamp.valueOf(request.gioDuKienHaCanh()),
+                toTimestamp(request.gioUocTinhKhoiHanh() == null ? request.gioDuKienKhoiHanh()
+                        : request.gioUocTinhKhoiHanh()),
+                toTimestamp(
+                        request.gioUocTinhHaCanh() == null ? request.gioDuKienHaCanh() : request.gioUocTinhHaCanh()),
                 maLichTrinh);
     }
 
@@ -335,6 +424,31 @@ public class ChuyenBayQuanTriRepository {
 
     public void xoaMemLichTrinh(String maLichTrinh, String lyDoXoa) {
         jdbcTemplate.update("""
+                INSERT INTO LICHSUCHUYENBAYXOA (
+                    MaChuyenBay,
+                    MaHangHangKhong,
+                    SoHieuChuyenBay,
+                    LoaiChuyenBay,
+                    DiemDen,
+                    DiemDi,
+                    ThoiGianXoa,
+                    LyDoXoa
+                )
+                SELECT
+                    cb.MaChuyenBay,
+                    cb.MaHangHangKhong,
+                    cb.SoHieuChuyenBay,
+                    cb.LoaiChuyenBay,
+                    cb.DiemDen,
+                    cb.DiemDi,
+                    CURRENT_TIMESTAMP,
+                    ?
+                FROM LICHTRINH lt
+                JOIN CHUYENBAY cb ON lt.MaChuyenBay = cb.MaChuyenBay
+                WHERE lt.MaLichTrinh = ?
+                """, trimToNull(lyDoXoa), maLichTrinh);
+
+        jdbcTemplate.update("""
                 UPDATE LICHTRINH
                 SET TrangThaiHienTai = N'Đã xóa',
                     LyDoChamHoacHuy = COALESCE(?, LyDoChamHoacHuy)
@@ -351,7 +465,8 @@ public class ChuyenBayQuanTriRepository {
     }
 
     public boolean tonTaiSoHieuChuyenBayKhac(String soHieuChuyenBay, String maChuyenBay) {
-        return dem("SELECT COUNT(*) FROM CHUYENBAY WHERE SoHieuChuyenBay = ? AND MaChuyenBay <> ?", soHieuChuyenBay, maChuyenBay) > 0;
+        return dem("SELECT COUNT(*) FROM CHUYENBAY WHERE SoHieuChuyenBay = ? AND MaChuyenBay <> ?", soHieuChuyenBay,
+                maChuyenBay) > 0;
     }
 
     public boolean tonTaiLichTrinh(String maLichTrinh) {
@@ -359,20 +474,24 @@ public class ChuyenBayQuanTriRepository {
     }
 
     public String layMaChuyenBayTheoLichTrinh(String maLichTrinh) {
-        return jdbcTemplate.queryForObject("SELECT MaChuyenBay FROM LICHTRINH WHERE MaLichTrinh = ?", String.class, maLichTrinh);
+        return jdbcTemplate.queryForObject("SELECT MaChuyenBay FROM LICHTRINH WHERE MaLichTrinh = ?", String.class,
+                maLichTrinh);
     }
 
     public String layTrangThaiTheoLichTrinh(String maLichTrinh) {
-        return jdbcTemplate.queryForObject("SELECT TrangThaiHienTai FROM LICHTRINH WHERE MaLichTrinh = ?", String.class, maLichTrinh);
+        return jdbcTemplate.queryForObject("SELECT TrangThaiHienTai FROM LICHTRINH WHERE MaLichTrinh = ?", String.class,
+                maLichTrinh);
     }
 
     public LocalDateTime layGioDuKienKhoiHanh(String maLichTrinh) {
-        Timestamp value = jdbcTemplate.queryForObject("SELECT GioDuKienKhoiHanh FROM LICHTRINH WHERE MaLichTrinh = ?", Timestamp.class, maLichTrinh);
+        Timestamp value = jdbcTemplate.queryForObject("SELECT GioDuKienKhoiHanh FROM LICHTRINH WHERE MaLichTrinh = ?",
+                Timestamp.class, maLichTrinh);
         return value == null ? null : value.toLocalDateTime();
     }
 
     public LocalDateTime layGioDuKienHaCanh(String maLichTrinh) {
-        Timestamp value = jdbcTemplate.queryForObject("SELECT GioDuKienHaCanh FROM LICHTRINH WHERE MaLichTrinh = ?", Timestamp.class, maLichTrinh);
+        Timestamp value = jdbcTemplate.queryForObject("SELECT GioDuKienHaCanh FROM LICHTRINH WHERE MaLichTrinh = ?",
+                Timestamp.class, maLichTrinh);
         return value == null ? null : value.toLocalDateTime();
     }
 
@@ -404,9 +523,16 @@ public class ChuyenBayQuanTriRepository {
                 rs.getString("TrangThaiHienTai"),
                 toInteger(rs.getObject("SoPhutCham")),
                 rs.getString("LyDoChamHoacHuy"),
+                rs.getString("MaCong"),
                 rs.getString("TenCong"),
-                rs.getString("TenBangChuyenHanhLy")
-        );
+                rs.getString("TenNhaGa"),
+                formatTimestamp(rs.getTimestamp("ThoiGianBatDauSuDungCong")),
+                formatTimestamp(rs.getTimestamp("ThoiGianKetThucSuDungCong")),
+                rs.getString("MaBangChuyenHanhLy"),
+                rs.getString("TenBangChuyenHanhLy"),
+                rs.getString("TenNhaGaBangChuyen"),
+                formatTimestamp(rs.getTimestamp("ThoiGianBatDauSuDungBangChuyen")),
+                formatTimestamp(rs.getTimestamp("ThoiGianKetThucSuDungBangChuyen")));
     }
 
     private Long dem(String sql, Object... params) {

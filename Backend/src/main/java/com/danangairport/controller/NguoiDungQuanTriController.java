@@ -71,26 +71,26 @@ public class NguoiDungQuanTriController {
     }
 
     @PatchMapping("/{maTaiKhoan}/lock")
-    public ResponseEntity<Map<String, String>> khoaTaiKhoan(@PathVariable String maTaiKhoan, @RequestBody(required = false) DoiTrangThaiTaiKhoanRequest request) {
-        service.khoaTaiKhoan(maTaiKhoan);
-        return ResponseEntity.ok(Map.of("message", "Da khoa tai khoan thanh cong"));
+    public ResponseEntity<Map<String, String>> khoaTaiKhoan(@PathVariable String maTaiKhoan, @Valid @RequestBody DoiTrangThaiTaiKhoanRequest request) {
+        service.khoaTaiKhoan(maTaiKhoan, request.getLyDo());
+        return ResponseEntity.ok(Map.of("message", "Đã khóa tài khoản thành công"));
     }
 
     @PatchMapping("/{maTaiKhoan}/unlock")
     public ResponseEntity<Map<String, String>> moKhoaTaiKhoan(@PathVariable String maTaiKhoan) {
         service.moKhoaTaiKhoan(maTaiKhoan);
-        return ResponseEntity.ok(Map.of("message", "Da mo khoa tai khoan thanh cong"));
+        return ResponseEntity.ok(Map.of("message", "Đã mở khóa tài khoản thành công"));
     }
 
     @PatchMapping("/{maTaiKhoan}/deactivate")
-    public ResponseEntity<Map<String, String>> ngungSuDungTaiKhoan(@PathVariable String maTaiKhoan) {
-        service.ngungSuDungTaiKhoan(maTaiKhoan);
-        return ResponseEntity.ok(Map.of("message", "Da ngung su dung tai khoan"));
+    public ResponseEntity<Map<String, String>> ngungSuDungTaiKhoan(@PathVariable String maTaiKhoan, @Valid @RequestBody DoiTrangThaiTaiKhoanRequest request) {
+        service.ngungSuDungTaiKhoan(maTaiKhoan, request.getLyDo());
+        return ResponseEntity.ok(Map.of("message", "Đã ngừng sử dụng tài khoản"));
     }
 
     @PatchMapping("/{maTaiKhoan}/reset-password")
     public ResponseEntity<Map<String, String>> datLaiMatKhau(@PathVariable String maTaiKhoan, @Valid @RequestBody DatLaiMatKhauRequest request) {
         service.datLaiMatKhau(maTaiKhoan, request.getMatKhauMoi());
-        return ResponseEntity.ok(Map.of("message", "Dat lai mat khau thanh cong"));
+        return ResponseEntity.ok(Map.of("message", "Đặt lại mật khẩu thành công"));
     }
 }

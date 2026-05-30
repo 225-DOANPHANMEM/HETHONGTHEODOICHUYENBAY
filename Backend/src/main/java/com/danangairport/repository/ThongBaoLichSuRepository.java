@@ -124,7 +124,15 @@ public class ThongBaoLichSuRepository {
     }
 
     public void capNhatTrangThaiThongBao(String maThongBao, String trangThaiGui) {
-        jdbcTemplate.update("UPDATE THONGBAO SET TrangThaiGui = ? WHERE MaThongBao = ?", trangThaiGui, maThongBao);
+        jdbcTemplate.update("""
+                UPDATE THONGBAO
+                SET TrangThaiGui = ?,
+                    ThoiGianGui = CASE
+                        WHEN ? = N'Đã gửi' THEN CURRENT_TIMESTAMP
+                        ELSE ThoiGianGui
+                    END
+                WHERE MaThongBao = ?
+                """, trangThaiGui, trangThaiGui, maThongBao);
     }
 
     public void taoThongBao(String maThongBao, TaoThongBaoThuCongRequest request) {

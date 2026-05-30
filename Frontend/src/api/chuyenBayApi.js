@@ -28,7 +28,7 @@ async function callApi(url, options = {}) {
 function buildUrl(filters = {}) {
   const params = new URLSearchParams();
   Object.entries(filters).forEach(([key, value]) => {
-    if (value) {
+    if (value !== undefined && value !== null && value !== "") {
       params.append(key, value);
     }
   });
@@ -46,6 +46,10 @@ export function layDanhSachChuyenBay(filters = {}) {
 
 export function layChiTietChuyenBay(maLichTrinh) {
   return callApi(`${BASE_URL}/${maLichTrinh}`);
+}
+
+export function layLichSuChuyenBay(maLichTrinh) {
+  return callApi(`${BASE_URL}/${maLichTrinh}/history`);
 }
 
 export function themChuyenBay(payload) {
@@ -69,12 +73,14 @@ export function capNhatTinhHinhChuyenBay(maLichTrinh, payload) {
   });
 }
 
-export function xoaMemChuyenBay(maLichTrinh, lyDoXoa) {
-  return callApi(`${BASE_URL}/${maLichTrinh}`, {
-    method: "DELETE",
-    body: JSON.stringify({ lyDoXoa }),
+export function luuTruChuyenBay(maLichTrinh, reason) {
+  return callApi(`${BASE_URL}/${maLichTrinh}/archive`, {
+    method: "PUT",
+    body: JSON.stringify({ lyDoXoa: reason }),
   });
 }
+
+export const xoaMemChuyenBay = luuTruChuyenBay;
 
 export function layHangHangKhongOptions() {
   return callApi(`${BASE_URL}/airlines/options`);

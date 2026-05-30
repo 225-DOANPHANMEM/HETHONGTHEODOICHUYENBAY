@@ -4,23 +4,23 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 public class TaoNguoiDungRequest {
-    @NotBlank(message = "Ten dang nhap khong duoc de trong")
-    @Size(max = 20, message = "Ten dang nhap toi da 20 ky tu")
+    @NotBlank(message = "Tên đăng nhập không được để trống")
+    @Size(max = 20, message = "Tên đăng nhập tối đa 20 ký tự")
     private String tenDangNhap;
 
-    @NotBlank(message = "Mat khau khong duoc de trong")
+    @NotBlank(message = "Mật khẩu không được để trống")
     private String matKhau;
 
-    @Size(max = 15, message = "So dien thoai toi da 15 ky tu")
+    @Size(max = 15, message = "Số điện thoại tối đa 15 ký tự")
     private String soDienThoai;
 
-    @Size(max = 50, message = "Email toi da 50 ky tu")
+    @Size(max = 50, message = "Email tối đa 50 ký tự")
     private String email;
 
-    @NotBlank(message = "Vai tro khong duoc de trong")
+    @NotBlank(message = "Vai trò không được để trống")
     private String vaiTro;
 
-    @NotBlank(message = "Trang thai tai khoan khong duoc de trong")
+    @NotBlank(message = "Trạng thái tài khoản không được để trống")
     private String trangThaiTaiKhoan;
 
     public String getTenDangNhap() {

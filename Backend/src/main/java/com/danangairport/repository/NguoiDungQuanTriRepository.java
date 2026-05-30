@@ -11,12 +11,21 @@ import java.sql.Timestamp;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Repository
 @SuppressWarnings("java:S2077")
 public class NguoiDungQuanTriRepository {
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+    private static final Map<String, String> LEGACY_TEXT = Map.of(
+            "Quản trị", "Quáº£n trá»‹",
+            "Điều phối", "Äiá»u phá»‘i",
+            "Khách hàng", "KhÃ¡ch hÃ ng",
+            "Hoạt động", "Hoáº¡t Ä‘á»™ng",
+            "Khóa", "KhÃ³a",
+            "Ngừng sử dụng", "Ngá»«ng sá»­ dá»¥ng"
+    );
     private final JdbcTemplate jdbcTemplate;
 
     public NguoiDungQuanTriRepository(JdbcTemplate jdbcTemplate) {
@@ -39,12 +48,16 @@ public class NguoiDungQuanTriRepository {
             params.add(likeKeyword);
         }
         if (vaiTro != null && !vaiTro.isBlank()) {
-            sql.append(" AND VaiTro = ?");
-            params.add(vaiTro.trim());
+            sql.append(" AND VaiTro IN (?, ?)");
+            String normalizedRole = vaiTro.trim();
+            params.add(normalizedRole);
+            params.add(legacyText(normalizedRole));
         }
         if (trangThai != null && !trangThai.isBlank()) {
-            sql.append(" AND TrangThaiTaiKhoan = ?");
-            params.add(trangThai.trim());
+            sql.append(" AND TrangThaiTaiKhoan IN (?, ?)");
+            String normalizedStatus = trangThai.trim();
+            params.add(normalizedStatus);
+            params.add(legacyText(normalizedStatus));
         }
         sql.append(" ORDER BY NgayTao DESC");
 
@@ -64,12 +77,12 @@ public class NguoiDungQuanTriRepository {
     public ThongKeNguoiDungDto thongKe() {
         ThongKeNguoiDungDto dto = new ThongKeNguoiDungDto();
         dto.setTongTaiKhoan(dem("SELECT COUNT(*) FROM TAIKHOAN"));
-        dto.setSoHoatDong(dem("SELECT COUNT(*) FROM TAIKHOAN WHERE TrangThaiTaiKhoan = N'Hoạt động'"));
-        dto.setSoBiKhoa(dem("SELECT COUNT(*) FROM TAIKHOAN WHERE TrangThaiTaiKhoan = N'Khóa'"));
-        dto.setSoNgungSuDung(dem("SELECT COUNT(*) FROM TAIKHOAN WHERE TrangThaiTaiKhoan = N'Ngừng sử dụng'"));
-        dto.setSoQuanTri(dem("SELECT COUNT(*) FROM TAIKHOAN WHERE VaiTro = N'Quản trị'"));
-        dto.setSoDieuPhoi(dem("SELECT COUNT(*) FROM TAIKHOAN WHERE VaiTro = N'Điều phối'"));
-        dto.setSoKhachHang(dem("SELECT COUNT(*) FROM TAIKHOAN WHERE VaiTro = N'Khách hàng'"));
+        dto.setSoHoatDong(demTheoGiaTri("TrangThaiTaiKhoan", "Hoạt động"));
+        dto.setSoBiKhoa(demTheoGiaTri("TrangThaiTaiKhoan", "Khóa"));
+        dto.setSoNgungSuDung(demTheoGiaTri("TrangThaiTaiKhoan", "Ngừng sử dụng"));
+        dto.setSoQuanTri(demTheoGiaTri("VaiTro", "Quản trị"));
+        dto.setSoDieuPhoi(demTheoGiaTri("VaiTro", "Điều phối"));
+        dto.setSoKhachHang(demTheoGiaTri("VaiTro", "Khách hàng"));
         return dto;
     }
 
@@ -155,6 +168,20 @@ public class NguoiDungQuanTriRepository {
         return value == null ? 0L : value;
     }
 
+    private Long demTheoGiaTri(String column, String value) {
+        Long count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM TAIKHOAN WHERE " + column + " IN (?, ?)",
+                Long.class,
+                value,
+                legacyText(value)
+        );
+        return count == null ? 0L : count;
+    }
+
+    private String legacyText(String value) {
+        return LEGACY_TEXT.getOrDefault(value, value);
+    }
+
     private NguoiDungDto mapNguoiDungDto(java.sql.ResultSet rs, int rowNum) throws java.sql.SQLException {
         Timestamp ngayTao = rs.getTimestamp("NgayTao");
         return new NguoiDungDto(
@@ -176,4 +203,3 @@ public class NguoiDungQuanTriRepository {
         return trimmed.isEmpty() ? null : trimmed;
     }
 }
-

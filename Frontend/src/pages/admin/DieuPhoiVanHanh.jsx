@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import AdminLayout from "../../layouts/AdminLayout.jsx";
 import {
+  capNhatTinhHinhDieuPhoi,
   huyPhanCongBangChuyen,
   huyPhanCongCong,
   layBangChuyenKhaDung,
@@ -26,17 +27,21 @@ const EMPTY_FILTERS = {
   tinhTrangBangChuyen: "tat-ca",
 };
 
-const STAT_CARDS = [
+const DISPATCH_STAT_CARDS = [
   { key: "tongLichTrinh", label: "Tổng lịch trình", icon: "fa-solid fa-plane" },
   { key: "lichTrinhDaPhanCongCong", label: "Đã phân công cổng", icon: "fa-solid fa-door-open" },
   { key: "lichTrinhChuaPhanCongCong", label: "Chưa phân công cổng", icon: "fa-solid fa-link-slash" },
   { key: "lichTrinhDaPhanCongBangChuyen", label: "Đã phân công băng chuyền", icon: "fa-solid fa-suitcase-rolling" },
-  { key: "lichTrinhChuaPhanCongBangChuyen", label: "Chưa phân công băng chuyền", icon: "fa-solid fa-link-slash" },
+  { key: "lichTrinhChuaPhanCongBangChuyen", label: "Chưa phân công băng chuyền", icon: "fa-solid fa-ban" },
   { key: "soCongSanSang", label: "Cổng sẵn sàng", icon: "fa-solid fa-circle-check" },
+  { key: "soCongDangDung", label: "Cổng đang dùng", icon: "fa-solid fa-person-walking-luggage" },
   { key: "soCongBaoTri", label: "Cổng bảo trì", icon: "fa-solid fa-screwdriver-wrench" },
   { key: "soBangChuyenSanSang", label: "Băng chuyền sẵn sàng", icon: "fa-solid fa-circle-check" },
+  { key: "soBangChuyenDangDung", label: "Băng chuyền đang dùng", icon: "fa-solid fa-gears" },
   { key: "soBangChuyenBaoTri", label: "Băng chuyền bảo trì", icon: "fa-solid fa-screwdriver-wrench" },
 ];
+
+const MAIN_STATUSES = ["Đã lên lịch", "Đang làm thủ tục", "Đang bay", "Chậm chuyến", "Hủy chuyến", "Hoàn thành"];
 
 function DieuPhoiVanHanh({ onNavigate }) {
   const [filters, setFilters] = useState(EMPTY_FILTERS);
@@ -46,16 +51,18 @@ function DieuPhoiVanHanh({ onNavigate }) {
   const [terminalOptions, setTerminalOptions] = useState([]);
   const [gateTypes, setGateTypes] = useState([]);
   const [flightTypes, setFlightTypes] = useState([]);
-  const [flightStatuses, setFlightStatuses] = useState([]);
+  const [flightStatuses, setFlightStatuses] = useState(MAIN_STATUSES);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [modal, setModal] = useState(null);
   const [formData, setFormData] = useState({});
-  const activeModalType = modal?.type;
-  const currentGateAssignmentId = modal?.item?.maPhanCongCong || "";
-  const currentBaggageAssignmentId = modal?.item?.maPhanCongBangChuyen || "";
+
+  const visibleStatuses = useMemo(() => {
+    const options = flightStatuses.filter((status) => status !== "Đã hạ cánh" && status !== "Đã xóa");
+    return options.length ? options : MAIN_STATUSES;
+  }, [flightStatuses]);
 
   const loadCommonData = useCallback(async () => {
     const [stats, terminals, gateTypeOptions, flightTypeOptions, statusOptions] = await Promise.all([
@@ -69,67 +76,37 @@ function DieuPhoiVanHanh({ onNavigate }) {
     setTerminalOptions(Array.isArray(terminals) ? terminals : []);
     setGateTypes(Array.isArray(gateTypeOptions) ? gateTypeOptions : []);
     setFlightTypes(Array.isArray(flightTypeOptions) ? flightTypeOptions : []);
-    setFlightStatuses(Array.isArray(statusOptions) ? statusOptions : []);
+    setFlightStatuses(Array.isArray(statusOptions) ? statusOptions : MAIN_STATUSES);
   }, []);
 
   const loadRows = useCallback(async () => {
     setLoading(true);
-    const data = await layDanhSachLichTrinhDieuPhoi(appliedFilters);
-    setRows(Array.isArray(data) ? data : []);
-    setLoading(false);
+    try {
+      const data = await layDanhSachLichTrinhDieuPhoi(appliedFilters);
+      setRows(Array.isArray(data) ? data : []);
+      setError("");
+    } catch (err) {
+      setRows([]);
+      setError(err.message || "Không tải được danh sách điều phối.");
+    } finally {
+      setLoading(false);
+    }
   }, [appliedFilters]);
 
   useEffect(() => {
-    let cancelled = false;
     async function fetchCommon() {
       try {
-        const [stats, terminals, gateTypeOptions, flightTypeOptions, statusOptions] = await Promise.all([
-          layThongKeDieuPhoi(),
-          layNhaGaOptionsDieuPhoi(),
-          layLoaiCongDieuPhoi(),
-          layLoaiChuyenBayDieuPhoi(),
-          layTrangThaiChuyenBayDieuPhoi(),
-        ]);
-        if (!cancelled) {
-          setStatistics(stats || {});
-          setTerminalOptions(Array.isArray(terminals) ? terminals : []);
-          setGateTypes(Array.isArray(gateTypeOptions) ? gateTypeOptions : []);
-          setFlightTypes(Array.isArray(flightTypeOptions) ? flightTypeOptions : []);
-          setFlightStatuses(Array.isArray(statusOptions) ? statusOptions : []);
-        }
+        await loadCommonData();
       } catch (err) {
-        if (!cancelled) setError(err.message || "Không tải được dữ liệu điều phối.");
+        setError(err.message || "Không tải được thống kê điều phối.");
       }
     }
     fetchCommon();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  }, [loadCommonData]);
 
   useEffect(() => {
-    let cancelled = false;
-    async function fetchRows() {
-      try {
-        const data = await layDanhSachLichTrinhDieuPhoi(appliedFilters);
-        if (!cancelled) {
-          setRows(Array.isArray(data) ? data : []);
-          setLoading(false);
-          setError("");
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setRows([]);
-          setLoading(false);
-          setError(err.message || "Không tải được danh sách lịch trình.");
-        }
-      }
-    }
-    fetchRows();
-    return () => {
-      cancelled = true;
-    };
-  }, [appliedFilters]);
+    loadRows();
+  }, [loadRows]);
 
   const reloadAll = async () => {
     setError("");
@@ -143,14 +120,12 @@ function DieuPhoiVanHanh({ onNavigate }) {
   };
 
   const applyFilters = () => {
-    setLoading(true);
     setAppliedFilters(filters);
   };
 
   const resetFilters = () => {
     setFilters(EMPTY_FILTERS);
     setAppliedFilters(EMPTY_FILTERS);
-    setLoading(true);
   };
 
   const openDetail = async (item) => {
@@ -166,6 +141,11 @@ function DieuPhoiVanHanh({ onNavigate }) {
     }
   };
 
+  const openStatusModal = (item) => {
+    setFormData(createStatusForm(item));
+    setModal({ type: "status", item });
+  };
+
   const openGateModal = (item) => {
     setFormData(createGateForm(item, gateTypes));
     setModal({ type: "gate", item, available: [], loadingAvailable: false });
@@ -177,6 +157,8 @@ function DieuPhoiVanHanh({ onNavigate }) {
   };
 
   const openDeactivateModal = (item, resourceType) => {
+    if (resourceType === "gate" && !item.maPhanCongCong) return;
+    if (resourceType === "baggage" && !item.maPhanCongBangChuyen) return;
     setModal({ type: "deactivate", item, resourceType });
   };
 
@@ -193,49 +175,77 @@ function DieuPhoiVanHanh({ onNavigate }) {
   };
 
   const loadAvailableResources = useCallback(async () => {
-    if (!["gate", "baggage"].includes(activeModalType)) return;
-    const start = formData.thoiGianBatDauSuDung;
-    const end = formData.thoiGianKetThucSuDung;
-    if (!start || !end) return;
+    if (!["gate", "baggage"].includes(modal?.type)) return;
+    if (!formData.thoiGianBatDauSuDung || !formData.thoiGianKetThucSuDung) return;
 
     setModal((current) => current ? { ...current, loadingAvailable: true } : current);
     try {
       const filtersForApi = {
-        thoiGianBatDau: start,
-        thoiGianKetThuc: end,
+        thoiGianBatDau: formData.thoiGianBatDauSuDung,
+        thoiGianKetThuc: formData.thoiGianKetThucSuDung,
         maNhaGa: formData.maNhaGa,
       };
-      if (activeModalType === "gate") {
+      if (modal.type === "gate") {
         filtersForApi.loaiCong = formData.loaiCong;
-        filtersForApi.maPhanCongBoQua = currentGateAssignmentId;
+        filtersForApi.maPhanCongBoQua = modal.item.maPhanCongCong || "";
         const data = await layCongKhaDung(filtersForApi);
         setModal((current) => current ? { ...current, available: Array.isArray(data) ? data : [], loadingAvailable: false } : current);
       } else {
-        filtersForApi.maPhanCongBoQua = currentBaggageAssignmentId;
+        filtersForApi.maPhanCongBoQua = modal.item.maPhanCongBangChuyen || "";
         const data = await layBangChuyenKhaDung(filtersForApi);
         setModal((current) => current ? { ...current, available: Array.isArray(data) ? data : [], loadingAvailable: false } : current);
       }
     } catch (err) {
       setModal((current) => current ? { ...current, available: [], loadingAvailable: false } : current);
-      setError(err.message || "Không tải được danh sách tài nguyên khả dụng.");
+      setError(err.message || "Không tải được tài nguyên khả dụng.");
     }
-  }, [activeModalType, currentBaggageAssignmentId, currentGateAssignmentId, formData]);
+  }, [formData, modal]);
 
   useEffect(() => {
     let timeoutId;
-    if (["gate", "baggage"].includes(activeModalType) && formData.thoiGianBatDauSuDung && formData.thoiGianKetThucSuDung) {
-      timeoutId = window.setTimeout(() => {
-        loadAvailableResources();
-      }, 250);
+    if (["gate", "baggage"].includes(modal?.type) && formData.thoiGianBatDauSuDung && formData.thoiGianKetThucSuDung) {
+      timeoutId = window.setTimeout(loadAvailableResources, 250);
     }
     return () => {
       if (timeoutId) window.clearTimeout(timeoutId);
     };
-  }, [activeModalType, loadAvailableResources, formData.thoiGianBatDauSuDung, formData.thoiGianKetThucSuDung, formData.maNhaGa, formData.loaiCong]);
+  }, [loadAvailableResources, modal?.type, formData.thoiGianBatDauSuDung, formData.thoiGianKetThucSuDung, formData.maNhaGa, formData.loaiCong]);
+
+  const handleUpdateStatus = async (event) => {
+    event.preventDefault();
+    if (!modal) return;
+
+    const validationMessage = validateStatusForm(formData);
+    if (validationMessage) {
+      setError(validationMessage);
+      return;
+    }
+
+    setSaving(true);
+    setError("");
+    setSuccess("");
+    try {
+      await capNhatTinhHinhDieuPhoi(modal.item.maLichTrinh, normalizeStatusPayload(formData));
+      setSuccess("Cập nhật tình hình chuyến bay thành công.");
+      setModal(null);
+      await reloadAll();
+    } catch (err) {
+      setError(err.message || "Cập nhật trạng thái thất bại.");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleAssignGate = async (event) => {
     event.preventDefault();
     if (!modal) return;
+
+    const validationMessage = validateAssignmentTime(formData);
+    if (validationMessage) {
+      setError(validationMessage);
+      return;
+    }
+
     setSaving(true);
     setError("");
     setSuccess("");
@@ -252,7 +262,7 @@ function DieuPhoiVanHanh({ onNavigate }) {
       setModal(null);
       await reloadAll();
     } catch (err) {
-      setError(err.message || "Không phân công được cổng.");
+      setError(err.message || "Phân công cổng thất bại.");
     } finally {
       setSaving(false);
     }
@@ -261,6 +271,13 @@ function DieuPhoiVanHanh({ onNavigate }) {
   const handleAssignBaggage = async (event) => {
     event.preventDefault();
     if (!modal) return;
+
+    const validationMessage = validateAssignmentTime(formData);
+    if (validationMessage) {
+      setError(validationMessage);
+      return;
+    }
+
     setSaving(true);
     setError("");
     setSuccess("");
@@ -276,7 +293,7 @@ function DieuPhoiVanHanh({ onNavigate }) {
       setModal(null);
       await reloadAll();
     } catch (err) {
-      setError(err.message || "Không phân công được băng chuyền.");
+      setError(err.message || "Phân công băng chuyền thất bại.");
     } finally {
       setSaving(false);
     }
@@ -284,21 +301,24 @@ function DieuPhoiVanHanh({ onNavigate }) {
 
   const handleDeactivate = async () => {
     if (!modal) return;
+
     setSaving(true);
     setError("");
     setSuccess("");
     try {
       if (modal.resourceType === "gate") {
+        if (!modal.item.maPhanCongCong) return;
         await huyPhanCongCong(modal.item.maPhanCongCong);
-        setSuccess("Đã hủy hiệu lực phân công cổng thành công.");
+        setSuccess("Hủy phân công cổng thành công.");
       } else {
+        if (!modal.item.maPhanCongBangChuyen) return;
         await huyPhanCongBangChuyen(modal.item.maPhanCongBangChuyen);
-        setSuccess("Đã hủy hiệu lực phân công băng chuyền thành công.");
+        setSuccess("Hủy phân công băng chuyền thành công.");
       }
       setModal(null);
       await reloadAll();
     } catch (err) {
-      setError(err.message || "Không hủy được phân công.");
+      setError(err.message || "Hủy phân công thất bại.");
     } finally {
       setSaving(false);
     }
@@ -314,7 +334,7 @@ function DieuPhoiVanHanh({ onNavigate }) {
             </span>
             <div>
               <h1>Điều phối vận hành</h1>
-              <p>Phân công cổng và băng chuyền hành lý cho các lịch trình chuyến bay.</p>
+              <p>Cập nhật tình hình thực tế, phân công cổng và băng chuyền cho các chuyến bay đến/đi.</p>
             </div>
           </div>
           <button className="dispatch-admin-button dispatch-admin-button--secondary" type="button" onClick={reloadAll}>
@@ -330,8 +350,8 @@ function DieuPhoiVanHanh({ onNavigate }) {
           </div>
         )}
 
-        <section className="dispatch-admin-stats">
-          {STAT_CARDS.map((card) => (
+        <section className="dispatch-admin-stats" aria-label="Thống kê điều phối">
+          {DISPATCH_STAT_CARDS.map((card) => (
             <article className="dispatch-admin-stat" key={card.key}>
               <span><i className={card.icon} aria-hidden="true" /></span>
               <div>
@@ -370,7 +390,7 @@ function DieuPhoiVanHanh({ onNavigate }) {
               <span>Trạng thái chuyến bay</span>
               <select name="trangThai" value={filters.trangThai} onChange={handleFilterChange}>
                 <option value="">Tất cả</option>
-                {flightStatuses.map((status) => <option key={status} value={status}>{status}</option>)}
+                {visibleStatuses.map((status) => <option key={status} value={status}>{status}</option>)}
               </select>
             </label>
             <label className="dispatch-admin-field">
@@ -395,6 +415,10 @@ function DieuPhoiVanHanh({ onNavigate }) {
                 Lọc
               </button>
               <button className="dispatch-admin-button dispatch-admin-button--secondary" type="button" onClick={resetFilters}>
+                <i className="fa-solid fa-filter-circle-xmark" aria-hidden="true" />
+                Xóa bộ lọc
+              </button>
+              <button className="dispatch-admin-button dispatch-admin-button--secondary" type="button" onClick={reloadAll}>
                 <i className="fa-solid fa-rotate-right" aria-hidden="true" />
                 Làm mới
               </button>
@@ -416,6 +440,7 @@ function DieuPhoiVanHanh({ onNavigate }) {
               <DispatchTable
                 rows={rows}
                 onView={openDetail}
+                onStatus={openStatusModal}
                 onGate={openGateModal}
                 onBaggage={openBaggageModal}
                 onDeactivate={openDeactivateModal}
@@ -423,6 +448,18 @@ function DieuPhoiVanHanh({ onNavigate }) {
             )}
           </div>
         </section>
+
+        {modal?.type === "status" && (
+          <StatusModal
+            modal={modal}
+            formData={formData}
+            statuses={visibleStatuses}
+            saving={saving}
+            onChange={handleFormChange}
+            onClose={closeModal}
+            onSubmit={handleUpdateStatus}
+          />
+        )}
 
         {modal?.type === "gate" && (
           <GateModal
@@ -459,19 +496,21 @@ function DieuPhoiVanHanh({ onNavigate }) {
   );
 }
 
-function DispatchTable({ rows, onView, onGate, onBaggage, onDeactivate }) {
+function DispatchTable({ rows, onView, onStatus, onGate, onBaggage, onDeactivate }) {
   return (
     <table className="dispatch-admin-table">
       <thead>
         <tr>
           <th>Số hiệu chuyến bay</th>
           <th>Hãng bay</th>
-          <th>Loại</th>
+          <th>Loại chuyến bay</th>
           <th>Điểm đi</th>
           <th>Điểm đến</th>
           <th>Ngày bay</th>
           <th>Giờ dự kiến</th>
+          <th>Giờ ước tính</th>
           <th>Trạng thái chuyến bay</th>
+          <th>Số phút chậm</th>
           <th>Cổng hiện tại</th>
           <th>Băng chuyền hiện tại</th>
           <th>Trạng thái điều phối</th>
@@ -483,22 +522,24 @@ function DispatchTable({ rows, onView, onGate, onBaggage, onDeactivate }) {
           <tr key={row.maLichTrinh}>
             <td className="dispatch-admin-code">{row.soHieuChuyenBay}</td>
             <td>{displayValue(row.tenHangHangKhong, "Chưa cập nhật")}</td>
-            <td><span className="dispatch-admin-badge">{row.loaiChuyenBay}</span></td>
+            <td><span className="dispatch-admin-badge">{displayValue(row.loaiChuyenBay, "Chưa cập nhật")}</span></td>
             <td>{displayValue(row.diemDi, "Chưa cập nhật")}</td>
             <td>{displayValue(row.diemDen, "Chưa cập nhật")}</td>
-            <td>{displayValue(row.ngayBay, "Chưa cập nhật")}</td>
-            <td>
-              <span>{displayValue(row.gioDuKienKhoiHanh, "Chưa cập nhật")}</span>
-              <small>{displayValue(row.gioDuKienHaCanh, "Chưa cập nhật")}</small>
-            </td>
-            <td><span className={statusClass(row.trangThaiHienTai)}>{row.trangThaiHienTai}</span></td>
-            <td>{displayValue(row.tenCong)}</td>
-            <td>{displayValue(row.tenBangChuyenHanhLy)}</td>
+            <td>{formatDate(row.ngayBay)}</td>
+            <td>{formatDateTime(primaryScheduledTime(row))}</td>
+            <td>{formatDateTime(primaryEstimatedTime(row))}</td>
+            <td><span className={statusClass(row.trangThaiHienTai)}>{displayValue(row.trangThaiHienTai, "Chưa cập nhật")}</span></td>
+            <td>{displayDelay(row.soPhutCham)}</td>
+            <td>{row.tenCong || "Chưa phân công"}</td>
+            <td>{row.tenBangChuyenHanhLy || "Chưa phân công"}</td>
             <td><span className={dispatchClass(row.trangThaiDieuPhoi)}>{row.trangThaiDieuPhoi}</span></td>
             <td>
               <div className="dispatch-admin-actions">
                 <button type="button" title="Xem chi tiết" aria-label="Xem chi tiết" onClick={() => onView(row)}>
                   <i className="fa-solid fa-eye" aria-hidden="true" />
+                </button>
+                <button type="button" title="Cập nhật tình hình" aria-label="Cập nhật tình hình" onClick={() => onStatus(row)}>
+                  <i className="fa-solid fa-pen-to-square" aria-hidden="true" />
                 </button>
                 <button type="button" title="Phân công cổng" aria-label="Phân công cổng" onClick={() => onGate(row)}>
                   <i className="fa-solid fa-door-open" aria-hidden="true" />
@@ -525,6 +566,50 @@ function DispatchTable({ rows, onView, onGate, onBaggage, onDeactivate }) {
   );
 }
 
+function StatusModal({ modal, formData, statuses, saving, onChange, onClose, onSubmit }) {
+  return (
+    <Modal title="Cập nhật tình hình chuyến bay" onClose={onClose} wide>
+      <form onSubmit={onSubmit}>
+        <AssignmentSummary item={modal.item} />
+        <div className="dispatch-admin-modal__body">
+          <label className="dispatch-admin-field">
+            <span>Mã tài khoản cập nhật</span>
+            <input name="maTaiKhoan" value={formData.maTaiKhoan || ""} onChange={onChange} required />
+          </label>
+          <label className="dispatch-admin-field">
+            <span>Trạng thái mới</span>
+            <select name="trangThaiMoi" value={formData.trangThaiMoi || ""} onChange={onChange} required>
+              <option value="">Chọn trạng thái</option>
+              {statuses.map((status) => <option key={status} value={status}>{status}</option>)}
+            </select>
+          </label>
+          <label className="dispatch-admin-field">
+            <span>Giờ ước tính khởi hành</span>
+            <input type="datetime-local" name="gioUocTinhKhoiHanh" value={formData.gioUocTinhKhoiHanh || ""} onChange={onChange} />
+          </label>
+          <label className="dispatch-admin-field">
+            <span>Giờ ước tính hạ cánh</span>
+            <input type="datetime-local" name="gioUocTinhHaCanh" value={formData.gioUocTinhHaCanh || ""} onChange={onChange} />
+          </label>
+          <label className="dispatch-admin-field">
+            <span>Giờ thực tế khởi hành</span>
+            <input type="datetime-local" name="gioThucTeKhoiHanh" value={formData.gioThucTeKhoiHanh || ""} onChange={onChange} />
+          </label>
+          <label className="dispatch-admin-field">
+            <span>Giờ thực tế hạ cánh</span>
+            <input type="datetime-local" name="gioThucTeHaCanh" value={formData.gioThucTeHaCanh || ""} onChange={onChange} />
+          </label>
+          <label className="dispatch-admin-field dispatch-admin-field--full">
+            <span>Lý do chậm/hủy</span>
+            <textarea name="lyDoChamHoacHuy" value={formData.lyDoChamHoacHuy || ""} onChange={onChange} rows={3} />
+          </label>
+        </div>
+        <ModalFooter saving={saving} onClose={onClose} saveLabel="Cập nhật" icon="fa-solid fa-floppy-disk" />
+      </form>
+    </Modal>
+  );
+}
+
 function GateModal({ modal, formData, terminalOptions, gateTypes, saving, onChange, onClose, onSubmit }) {
   const available = modal.available || [];
   const readyItems = available.filter((item) => item.coSanSang);
@@ -543,7 +628,7 @@ function GateModal({ modal, formData, terminalOptions, gateTypes, saving, onChan
           </label>
           <TerminalSelect terminalOptions={terminalOptions} value={formData.maNhaGa || ""} onChange={onChange} />
           <label className="dispatch-admin-field dispatch-admin-field--full">
-            <span>Danh sách cổng khả dụng</span>
+            <span>Cổng khả dụng</span>
             <select name="maCong" value={formData.maCong || ""} onChange={onChange} required>
               <option value="">Chọn cổng</option>
               {available.map((item) => (
@@ -554,9 +639,10 @@ function GateModal({ modal, formData, terminalOptions, gateTypes, saving, onChan
             </select>
           </label>
           {modal.loadingAvailable && <InfoText text="Đang kiểm tra cổng khả dụng..." />}
+          {!modal.loadingAvailable && available.length === 0 && <InfoText text="Nhập khoảng thời gian để tải cổng khả dụng." />}
           {!modal.loadingAvailable && available.length > 0 && readyItems.length === 0 && <WarningText text="Không có cổng khả dụng trong khoảng thời gian đã chọn." />}
         </div>
-        <ModalFooter saving={saving} onClose={onClose} saveLabel="Phân công" />
+        <ModalFooter saving={saving} onClose={onClose} saveLabel="Phân công" icon="fa-solid fa-link" />
       </form>
     </Modal>
   );
@@ -574,7 +660,7 @@ function BaggageModal({ modal, formData, terminalOptions, saving, onChange, onCl
           <TimeFields formData={formData} onChange={onChange} />
           <TerminalSelect terminalOptions={terminalOptions} value={formData.maNhaGa || ""} onChange={onChange} />
           <label className="dispatch-admin-field dispatch-admin-field--full">
-            <span>Danh sách băng chuyền khả dụng</span>
+            <span>Băng chuyền khả dụng</span>
             <select name="maBangChuyenHanhLy" value={formData.maBangChuyenHanhLy || ""} onChange={onChange} required>
               <option value="">Chọn băng chuyền</option>
               {available.map((item) => (
@@ -585,9 +671,10 @@ function BaggageModal({ modal, formData, terminalOptions, saving, onChange, onCl
             </select>
           </label>
           {modal.loadingAvailable && <InfoText text="Đang kiểm tra băng chuyền khả dụng..." />}
+          {!modal.loadingAvailable && available.length === 0 && <InfoText text="Nhập khoảng thời gian để tải băng chuyền khả dụng." />}
           {!modal.loadingAvailable && available.length > 0 && readyItems.length === 0 && <WarningText text="Không có băng chuyền khả dụng trong khoảng thời gian đã chọn." />}
         </div>
-        <ModalFooter saving={saving} onClose={onClose} saveLabel="Phân công" />
+        <ModalFooter saving={saving} onClose={onClose} saveLabel="Phân công" icon="fa-solid fa-link" />
       </form>
     </Modal>
   );
@@ -598,19 +685,12 @@ function DetailModal({ detail, onClose }) {
   return (
     <Modal title={`Chi tiết điều phối ${item.soHieuChuyenBay || ""}`} onClose={onClose} wide>
       <div className="dispatch-admin-detail">
-        <section>
-          <h3>Thông tin chuyến bay</h3>
-          <div className="dispatch-admin-detail-grid">
-            {detailFields(item).map((field) => (
-              <div className="dispatch-admin-detail-item" key={field.label}>
-                <span>{field.label}</span>
-                <strong>{displayValue(field.value, field.emptyText)}</strong>
-              </div>
-            ))}
-          </div>
-        </section>
+        <DetailSection title="Thông tin chuyến bay" fields={flightDetailFields(item)} />
+        <DetailSection title="Thông tin thời gian" fields={timeDetailFields(item)} />
+        <DetailSection title="Thông tin điều phối" fields={dispatchDetailFields(item)} />
         <HistorySection title="Lịch sử phân công cổng" items={detail?.lichSuPhanCongCong || []} type="gate" />
         <HistorySection title="Lịch sử phân công băng chuyền" items={detail?.lichSuPhanCongBangChuyen || []} type="baggage" />
+        <StatusHistorySection items={detail?.lichSuCapNhat || []} />
       </div>
       <div className="dispatch-admin-modal__footer">
         <button className="dispatch-admin-button dispatch-admin-button--primary" type="button" onClick={onClose}>Đóng</button>
@@ -619,19 +699,56 @@ function DetailModal({ detail, onClose }) {
   );
 }
 
+function DetailSection({ title, fields }) {
+  return (
+    <section>
+      <h3>{title}</h3>
+      <div className="dispatch-admin-detail-grid">
+        {fields.map((field) => (
+          <div className="dispatch-admin-detail-item" key={field.label}>
+            <span>{field.label}</span>
+            <strong>{displayValue(field.value, field.emptyText || "Chưa cập nhật")}</strong>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function HistorySection({ title, items, type }) {
   return (
     <section>
       <h3>{title}</h3>
       {items.length === 0 ? (
-        <p className="dispatch-admin-empty-text">Chưa phân công</p>
+        <p className="dispatch-admin-empty-text">Chưa có lịch sử.</p>
       ) : (
         <div className="dispatch-admin-list">
           {items.map((item) => (
             <article key={type === "gate" ? item.maPhanCongCong : item.maPhanCongBangChuyen}>
               <strong>{type === "gate" ? item.tenCong : item.tenBangChuyenHanhLy}</strong>
-              <p>{item.tenNhaGa} · {displayValue(item.thoiGianBatDauSuDung, "Chưa cập nhật")} - {displayValue(item.thoiGianKetThucSuDung, "Chưa cập nhật")}</p>
+              <p>{item.tenNhaGa} · {formatDateTime(item.thoiGianBatDauSuDung)} - {formatDateTime(item.thoiGianKetThucSuDung)}</p>
               <span>{item.dangHienHanh ? "Đang hiệu lực" : "Đã hủy hiệu lực"}</span>
+            </article>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function StatusHistorySection({ items }) {
+  return (
+    <section>
+      <h3>Lịch sử cập nhật tình hình</h3>
+      {items.length === 0 ? (
+        <p className="dispatch-admin-empty-text">Chưa có lịch sử.</p>
+      ) : (
+        <div className="dispatch-admin-list">
+          {items.map((item) => (
+            <article key={item.maLichSuCapNhat}>
+              <strong>{displayValue(item.trangThaiCu, "Chưa cập nhật")} → {displayValue(item.trangThaiMoi, "Chưa cập nhật")}</strong>
+              <p>{displayValue(item.noiDungCapNhat || item.lyDoCapNhat, "Chưa cập nhật")}</p>
+              <span>{displayValue(item.tenDangNhap, "Chưa cập nhật")} · {formatDateTime(item.thoiGianCapNhat)} · Chậm {item.soPhutChamMoi ?? 0} phút</span>
             </article>
           ))}
         </div>
@@ -646,7 +763,7 @@ function DeactivateModal({ modal, saving, onClose, onConfirm }) {
     <Modal title="Hủy phân công" onClose={onClose}>
       <div className="dispatch-admin-delete">
         <i className="fa-solid fa-triangle-exclamation" aria-hidden="true" />
-        <p>Bạn có chắc muốn hủy hiệu lực phân công {isGate ? "cổng" : "băng chuyền"} của chuyến bay <strong>{modal.item.soHieuChuyenBay}</strong>?</p>
+        <p>Bạn có chắc muốn hủy phân công {isGate ? "cổng" : "băng chuyền"} của chuyến bay <strong>{modal.item.soHieuChuyenBay}</strong>?</p>
       </div>
       <div className="dispatch-admin-modal__footer">
         <button className="dispatch-admin-button dispatch-admin-button--secondary" type="button" onClick={onClose} disabled={saving}>Hủy</button>
@@ -678,10 +795,12 @@ function Modal({ title, children, onClose, wide = false }) {
 function AssignmentSummary({ item }) {
   return (
     <div className="dispatch-admin-summary">
-      <div><span>Số hiệu</span><strong>{item.soHieuChuyenBay}</strong></div>
-      <div><span>Hãng bay</span><strong>{item.tenHangHangKhong}</strong></div>
-      <div><span>Ngày bay</span><strong>{item.ngayBay}</strong></div>
-      <div><span>Giờ dự kiến</span><strong>{item.gioDuKienKhoiHanh} - {item.gioDuKienHaCanh}</strong></div>
+      <div><span>Số hiệu</span><strong>{displayValue(item.soHieuChuyenBay, "Chưa cập nhật")}</strong></div>
+      <div><span>Hãng bay</span><strong>{displayValue(item.tenHangHangKhong, "Chưa cập nhật")}</strong></div>
+      <div><span>Loại chuyến bay</span><strong>{displayValue(item.loaiChuyenBay, "Chưa cập nhật")}</strong></div>
+      <div><span>Tuyến bay</span><strong>{displayValue(item.diemDi, "Chưa cập nhật")} - {displayValue(item.diemDen, "Chưa cập nhật")}</strong></div>
+      <div><span>Ngày bay</span><strong>{formatDate(item.ngayBay)}</strong></div>
+      <div><span>Trạng thái hiện tại</span><strong>{displayValue(item.trangThaiHienTai, "Chưa cập nhật")}</strong></div>
     </div>
   );
 }
@@ -715,12 +834,12 @@ function TerminalSelect({ terminalOptions, value, onChange }) {
   );
 }
 
-function ModalFooter({ saving, onClose, saveLabel }) {
+function ModalFooter({ saving, onClose, saveLabel, icon }) {
   return (
     <div className="dispatch-admin-modal__footer">
       <button className="dispatch-admin-button dispatch-admin-button--secondary" type="button" onClick={onClose} disabled={saving}>Hủy</button>
       <button className="dispatch-admin-button dispatch-admin-button--primary" type="submit" disabled={saving}>
-        <i className={saving ? "fa-solid fa-spinner fa-spin" : "fa-solid fa-link"} aria-hidden="true" />
+        <i className={saving ? "fa-solid fa-spinner fa-spin" : icon} aria-hidden="true" />
         {saveLabel}
       </button>
     </div>
@@ -735,23 +854,73 @@ function InfoText({ text }) {
   return <div className="dispatch-admin-info"><i className="fa-solid fa-circle-info" aria-hidden="true" /><span>{text}</span></div>;
 }
 
+function createStatusForm(item) {
+  return {
+    maTaiKhoan: "TK01",
+    trangThaiMoi: item.trangThaiHienTai && item.trangThaiHienTai !== "Đã hạ cánh" ? item.trangThaiHienTai : "Đã lên lịch",
+    gioUocTinhKhoiHanh: normalizeInputDateTime(item.gioUocTinhKhoiHanh),
+    gioUocTinhHaCanh: normalizeInputDateTime(item.gioUocTinhHaCanh),
+    gioThucTeKhoiHanh: normalizeInputDateTime(item.gioThucTeKhoiHanh),
+    gioThucTeHaCanh: normalizeInputDateTime(item.gioThucTeHaCanh),
+    lyDoChamHoacHuy: item.lyDoChamHoacHuy || "",
+  };
+}
+
 function createGateForm(item, gateTypes) {
   return {
-    thoiGianBatDauSuDung: item.gioUocTinhKhoiHanh || item.gioDuKienKhoiHanh || "",
-    thoiGianKetThucSuDung: item.gioUocTinhHaCanh || item.gioDuKienHaCanh || "",
+    thoiGianBatDauSuDung: normalizeInputDateTime(item.thoiGianBatDauSuDungCong || item.gioUocTinhKhoiHanh || item.gioDuKienKhoiHanh),
+    thoiGianKetThucSuDung: normalizeInputDateTime(item.thoiGianKetThucSuDungCong || item.gioUocTinhHaCanh || item.gioDuKienHaCanh),
     loaiCong: gateTypes[0] || "Nội địa",
     maNhaGa: "",
-    maCong: "",
+    maCong: item.maCong || "",
   };
 }
 
 function createBaggageForm(item) {
   return {
-    thoiGianBatDauSuDung: item.gioUocTinhHaCanh || item.gioDuKienHaCanh || "",
-    thoiGianKetThucSuDung: addMinutes(item.gioUocTinhHaCanh || item.gioDuKienHaCanh, 45),
+    thoiGianBatDauSuDung: normalizeInputDateTime(item.thoiGianBatDauSuDungBangChuyen || item.gioUocTinhHaCanh || item.gioDuKienHaCanh),
+    thoiGianKetThucSuDung: normalizeInputDateTime(item.thoiGianKetThucSuDungBangChuyen || addMinutes(item.gioUocTinhHaCanh || item.gioDuKienHaCanh, 45)),
     maNhaGa: "",
-    maBangChuyenHanhLy: "",
+    maBangChuyenHanhLy: item.maBangChuyenHanhLy || "",
   };
+}
+
+function normalizeStatusPayload(data) {
+  return {
+    maTaiKhoan: data.maTaiKhoan?.trim() || "TK01",
+    trangThaiMoi: data.trangThaiMoi || "",
+    gioUocTinhKhoiHanh: emptyToNull(data.gioUocTinhKhoiHanh),
+    gioUocTinhHaCanh: emptyToNull(data.gioUocTinhHaCanh),
+    gioThucTeKhoiHanh: emptyToNull(data.gioThucTeKhoiHanh),
+    gioThucTeHaCanh: emptyToNull(data.gioThucTeHaCanh),
+    lyDoChamHoacHuy: data.lyDoChamHoacHuy?.trim() || "",
+  };
+}
+
+function validateStatusForm(data) {
+  if (!data.trangThaiMoi) return "Phải chọn trạng thái mới.";
+  if (["Chậm chuyến", "Hủy chuyến"].includes(data.trangThaiMoi) && !data.lyDoChamHoacHuy?.trim()) {
+    return "Nhập thiếu lý do chậm/hủy.";
+  }
+  if (data.trangThaiMoi === "Đang bay" && !data.gioThucTeKhoiHanh) {
+    return "Cập nhật Đang bay bắt buộc nhập giờ thực tế khởi hành.";
+  }
+  if (data.trangThaiMoi === "Hoàn thành" && !data.gioThucTeHaCanh) {
+    return "Cập nhật Hoàn thành bắt buộc nhập giờ thực tế hạ cánh.";
+  }
+  if (data.gioUocTinhKhoiHanh && data.gioUocTinhHaCanh && new Date(data.gioUocTinhHaCanh) <= new Date(data.gioUocTinhKhoiHanh)) {
+    return "Giờ ước tính hạ cánh phải lớn hơn giờ ước tính khởi hành.";
+  }
+  if (data.gioThucTeKhoiHanh && data.gioThucTeHaCanh && new Date(data.gioThucTeHaCanh) < new Date(data.gioThucTeKhoiHanh)) {
+    return "Giờ thực tế hạ cánh phải lớn hơn hoặc bằng giờ thực tế khởi hành.";
+  }
+  return "";
+}
+
+function validateAssignmentTime(data) {
+  if (!data.thoiGianBatDauSuDung || !data.thoiGianKetThucSuDung) return "Thời gian bắt đầu và kết thúc không được để trống.";
+  if (new Date(data.thoiGianKetThucSuDung) <= new Date(data.thoiGianBatDauSuDung)) return "Thời gian kết thúc phải lớn hơn thời gian bắt đầu.";
+  return "";
 }
 
 function addMinutes(value, minutes) {
@@ -767,8 +936,41 @@ function toDateTimeLocal(date) {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
+function normalizeInputDateTime(value) {
+  return value ? value.slice(0, 16) : "";
+}
+
+function emptyToNull(value) {
+  return value ? value : null;
+}
+
 function displayValue(value, emptyText = "Chưa phân công") {
   return value === null || value === undefined || value === "" ? emptyText : value;
+}
+
+function displayDelay(minutes) {
+  return minutes && minutes > 0 ? `${minutes} phút` : "Đúng giờ";
+}
+
+function formatDate(value) {
+  if (!value) return "Chưa cập nhật";
+  const [year, month, day] = value.split("-");
+  return year && month && day ? `${day}/${month}/${year}` : value;
+}
+
+function formatDateTime(value) {
+  if (!value) return "Chưa cập nhật";
+  const [datePart, timePart = ""] = value.split("T");
+  const formattedDate = formatDate(datePart);
+  return timePart ? `${formattedDate} ${timePart.slice(0, 5)}` : formattedDate;
+}
+
+function primaryScheduledTime(row) {
+  return row.loaiChuyenBay === "Đến" ? row.gioDuKienHaCanh : row.gioDuKienKhoiHanh;
+}
+
+function primaryEstimatedTime(row) {
+  return row.loaiChuyenBay === "Đến" ? row.gioUocTinhHaCanh : row.gioUocTinhKhoiHanh;
 }
 
 function statusClass(status) {
@@ -776,10 +978,9 @@ function statusClass(status) {
     "Đã lên lịch": "dispatch-admin-status dispatch-admin-status--scheduled",
     "Đang làm thủ tục": "dispatch-admin-status dispatch-admin-status--checkin",
     "Đang bay": "dispatch-admin-status dispatch-admin-status--flying",
-    "Đã hạ cánh": "dispatch-admin-status dispatch-admin-status--landed",
-    "Hoàn thành": "dispatch-admin-status dispatch-admin-status--completed",
     "Chậm chuyến": "dispatch-admin-status dispatch-admin-status--delayed",
     "Hủy chuyến": "dispatch-admin-status dispatch-admin-status--cancelled",
+    "Hoàn thành": "dispatch-admin-status dispatch-admin-status--completed",
   };
   return map[status] || "dispatch-admin-status";
 }
@@ -794,20 +995,39 @@ function dispatchClass(status) {
   return map[status] || "dispatch-admin-status";
 }
 
-function detailFields(item) {
+function flightDetailFields(item) {
   return [
-    { label: "Mã lịch trình", value: item.maLichTrinh, emptyText: "Chưa cập nhật" },
-    { label: "Số hiệu chuyến bay", value: item.soHieuChuyenBay, emptyText: "Chưa cập nhật" },
-    { label: "Hãng bay", value: item.tenHangHangKhong, emptyText: "Chưa cập nhật" },
-    { label: "Loại chuyến bay", value: item.loaiChuyenBay, emptyText: "Chưa cập nhật" },
-    { label: "Điểm đi", value: item.diemDi, emptyText: "Chưa cập nhật" },
-    { label: "Điểm đến", value: item.diemDen, emptyText: "Chưa cập nhật" },
-    { label: "Ngày bay", value: item.ngayBay, emptyText: "Chưa cập nhật" },
-    { label: "Giờ dự kiến khởi hành", value: item.gioDuKienKhoiHanh, emptyText: "Chưa cập nhật" },
-    { label: "Giờ dự kiến hạ cánh", value: item.gioDuKienHaCanh, emptyText: "Chưa cập nhật" },
-    { label: "Cổng hiện hành", value: item.tenCong },
-    { label: "Băng chuyền hiện hành", value: item.tenBangChuyenHanhLy },
-    { label: "Trạng thái điều phối", value: item.trangThaiDieuPhoi, emptyText: "Chưa cập nhật" },
+    { label: "Mã lịch trình", value: item.maLichTrinh },
+    { label: "Mã chuyến bay", value: item.maChuyenBay },
+    { label: "Số hiệu chuyến bay", value: item.soHieuChuyenBay },
+    { label: "Hãng bay", value: item.tenHangHangKhong },
+    { label: "Loại chuyến bay", value: item.loaiChuyenBay },
+    { label: "Điểm đi", value: item.diemDi },
+    { label: "Điểm đến", value: item.diemDen },
+  ];
+}
+
+function timeDetailFields(item) {
+  return [
+    { label: "Ngày bay", value: formatDate(item.ngayBay) },
+    { label: "Giờ dự kiến khởi hành", value: formatDateTime(item.gioDuKienKhoiHanh) },
+    { label: "Giờ dự kiến hạ cánh", value: formatDateTime(item.gioDuKienHaCanh) },
+    { label: "Giờ ước tính khởi hành", value: formatDateTime(item.gioUocTinhKhoiHanh) },
+    { label: "Giờ ước tính hạ cánh", value: formatDateTime(item.gioUocTinhHaCanh) },
+    { label: "Giờ thực tế khởi hành", value: formatDateTime(item.gioThucTeKhoiHanh) },
+    { label: "Giờ thực tế hạ cánh", value: formatDateTime(item.gioThucTeHaCanh) },
+    { label: "Số phút chậm", value: item.soPhutCham ?? 0 },
+    { label: "Lý do chậm/hủy", value: item.lyDoChamHoacHuy },
+  ];
+}
+
+function dispatchDetailFields(item) {
+  return [
+    { label: "Cổng hiện tại", value: item.tenCong, emptyText: "Chưa phân công" },
+    { label: "Nhà ga của cổng", value: item.tenNhaGaCong, emptyText: "Chưa phân công" },
+    { label: "Băng chuyền hiện tại", value: item.tenBangChuyenHanhLy, emptyText: "Chưa phân công" },
+    { label: "Nhà ga của băng chuyền", value: item.tenNhaGaBangChuyen, emptyText: "Chưa phân công" },
+    { label: "Trạng thái điều phối", value: item.trangThaiDieuPhoi },
   ];
 }
 

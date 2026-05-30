@@ -8,6 +8,7 @@ public record DieuPhoiTongQuanDto(
         PhanCongBangChuyenDto bangChuyenHienHanh,
         List<PhanCongCongDto> lichSuPhanCongCong,
         List<PhanCongBangChuyenDto> lichSuPhanCongBangChuyen,
+        List<LichSuCapNhatChuyenBayDto> lichSuCapNhat,
         List<CongOptionDto> congKhaDung,
         List<BangChuyenOptionDto> bangChuyenKhaDung
 ) {

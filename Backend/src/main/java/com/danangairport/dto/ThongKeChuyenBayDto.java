@@ -8,10 +8,12 @@ public record ThongKeChuyenBayDto(
         Long soDaLenLich,
         Long soDangLamThuTuc,
         Long soDangBay,
+        Long soDangKhaiThac,
         Long soDaHaCanh,
         Long soHoanThanh,
         Long soChamChuyen,
         Long soHuyChuyen,
+        Long soChamHuy,
         Long soDaXoa
 ) {
 }

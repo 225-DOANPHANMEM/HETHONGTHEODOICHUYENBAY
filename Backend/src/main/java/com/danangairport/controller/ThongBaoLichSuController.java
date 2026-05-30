@@ -41,13 +41,25 @@ public class ThongBaoLichSuController {
     @GetMapping("/notifications")
     public List<ThongBaoDto> layDanhSachThongBao(
             @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String sendStatus,
             @RequestParam(required = false) String trangThaiGui,
+            @RequestParam(required = false) String method,
             @RequestParam(required = false) String phuongThucGui,
             @RequestParam(required = false) String trangThaiMoi,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate tuNgay,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate denNgay
     ) {
-        return service.layDanhSachThongBao(keyword, trangThaiGui, phuongThucGui, trangThaiMoi, tuNgay, denNgay);
+        LocalDate from = date != null ? date : tuNgay;
+        LocalDate to = date != null ? date : denNgay;
+        return service.layDanhSachThongBao(
+                keyword,
+                firstText(sendStatus, trangThaiGui),
+                firstText(method, phuongThucGui),
+                trangThaiMoi,
+                from,
+                to
+        );
     }
 
     @GetMapping("/notifications/{maThongBao}")
@@ -72,15 +84,39 @@ public class ThongBaoLichSuController {
     public List<LichSuCapNhatDto> layDanhSachLichSu(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String maTaiKhoan,
+            @RequestParam(required = false) String status,
             @RequestParam(required = false) String trangThaiMoi,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate tuNgay,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate denNgay
     ) {
-        return service.layDanhSachLichSu(keyword, maTaiKhoan, trangThaiMoi, tuNgay, denNgay);
+        return service.layDanhSachLichSu(
+                keyword,
+                maTaiKhoan,
+                firstText(status, trangThaiMoi),
+                fromDate != null ? fromDate : tuNgay,
+                toDate != null ? toDate : denNgay
+        );
+    }
+
+    @GetMapping("/histories")
+    public List<LichSuCapNhatDto> layDanhSachLichSuAlias(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate
+    ) {
+        return service.layDanhSachLichSu(keyword, null, status, fromDate, toDate);
     }
 
     @GetMapping("/update-logs/{maLichSuCapNhat}")
     public ChiTietLichSuCapNhatDto layChiTietLichSu(@PathVariable String maLichSuCapNhat) {
+        return service.layChiTietLichSu(maLichSuCapNhat);
+    }
+
+    @GetMapping("/histories/{maLichSuCapNhat}")
+    public ChiTietLichSuCapNhatDto layChiTietLichSuAlias(@PathVariable String maLichSuCapNhat) {
         return service.layChiTietLichSu(maLichSuCapNhat);
     }
 
@@ -117,5 +153,9 @@ public class ThongBaoLichSuController {
     @GetMapping("/baggage-carousels/options")
     public List<ThongBaoOptionDto> layBangChuyenOptions() {
         return service.layBangChuyenOptions();
+    }
+
+    private String firstText(String preferred, String fallback) {
+        return preferred != null && !preferred.isBlank() ? preferred : fallback;
     }
 }

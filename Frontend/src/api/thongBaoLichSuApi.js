@@ -59,11 +59,11 @@ export function taoThongBaoThuCong(payload) {
 }
 
 export function layDanhSachLichSuCapNhat(filters = {}) {
-  return callApi(buildUrl("/update-logs", filters));
+  return callApi(buildUrl("/histories", filters));
 }
 
 export function layChiTietLichSuCapNhat(maLichSuCapNhat) {
-  return callApi(`${BASE_URL}/update-logs/${maLichSuCapNhat}`);
+  return callApi(`${BASE_URL}/histories/${maLichSuCapNhat}`);
 }
 
 export function layPhuongThucThongBao() {

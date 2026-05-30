@@ -3,6 +3,7 @@ package com.danangairport.repository;
 import com.danangairport.dto.BangChuyenOptionDto;
 import com.danangairport.dto.CongOptionDto;
 import com.danangairport.dto.LichTrinhDieuPhoiDto;
+import com.danangairport.dto.LichSuCapNhatChuyenBayDto;
 import com.danangairport.dto.PhanCongBangChuyenDto;
 import com.danangairport.dto.PhanCongCongDto;
 import com.danangairport.dto.TaoPhanCongBangChuyenRequest;
@@ -83,15 +84,25 @@ public class DieuPhoiVanHanhRepository {
                     lt.GioDuKienHaCanh,
                     lt.GioUocTinhKhoiHanh,
                     lt.GioUocTinhHaCanh,
+                    lt.GioThucTeKhoiHanh,
+                    lt.GioThucTeHaCanh,
                     lt.TrangThaiHienTai,
+                    lt.SoPhutCham,
+                    lt.LyDoChamHoacHuy,
                     cong.MaPhanCongCong,
                     cong.MaCong,
                     cong.TenCong,
+                    cong.TenNhaGa AS TenNhaGaCong,
                     cong.TrangThaiCong,
+                    cong.ThoiGianBatDauSuDung AS ThoiGianBatDauSuDungCong,
+                    cong.ThoiGianKetThucSuDung AS ThoiGianKetThucSuDungCong,
                     bc.MaPhanCongBangChuyen,
                     bc.MaBangChuyenHanhLy,
                     bc.TenBangChuyenHanhLy,
-                    bc.TrangThaiBangChuyen
+                    bc.TenNhaGa AS TenNhaGaBangChuyen,
+                    bc.TrangThaiBangChuyen,
+                    bc.ThoiGianBatDauSuDung AS ThoiGianBatDauSuDungBangChuyen,
+                    bc.ThoiGianKetThucSuDung AS ThoiGianKetThucSuDungBangChuyen
                 FROM LICHTRINH lt
                 JOIN CHUYENBAY cb ON lt.MaChuyenBay = cb.MaChuyenBay
                 JOIN HANGHANGKHONG hh ON cb.MaHangHangKhong = hh.MaHangHangKhong
@@ -100,9 +111,13 @@ public class DieuPhoiVanHanhRepository {
                         pcc.MaPhanCongCong,
                         c.MaCong,
                         c.TenCong,
-                        c.TrangThaiCong
+                        ng.TenNhaGa,
+                        c.TrangThaiCong,
+                        pcc.ThoiGianBatDauSuDung,
+                        pcc.ThoiGianKetThucSuDung
                     FROM PHANCONGCONG pcc
                     JOIN CONG c ON pcc.MaCong = c.MaCong
+                    JOIN NHAGA ng ON c.MaNhaGa = ng.MaNhaGa
                     WHERE pcc.MaLichTrinh = lt.MaLichTrinh
                       AND pcc.DangHienHanh = 1
                     ORDER BY pcc.ThoiGianBatDauSuDung DESC
@@ -112,9 +127,13 @@ public class DieuPhoiVanHanhRepository {
                         pcbc.MaPhanCongBangChuyen,
                         b.MaBangChuyenHanhLy,
                         b.TenBangChuyenHanhLy,
-                        b.TrangThaiBangChuyen
+                        ng.TenNhaGa,
+                        b.TrangThaiBangChuyen,
+                        pcbc.ThoiGianBatDauSuDung,
+                        pcbc.ThoiGianKetThucSuDung
                     FROM PHANCONGBANGCHUYEN pcbc
                     JOIN BANGCHUYENHANHLY b ON pcbc.MaBangChuyenHanhLy = b.MaBangChuyenHanhLy
+                    JOIN NHAGA ng ON b.MaNhaGa = ng.MaNhaGa
                     WHERE pcbc.MaLichTrinh = lt.MaLichTrinh
                       AND pcbc.DangHienHanh = 1
                     ORDER BY pcbc.ThoiGianBatDauSuDung DESC
@@ -212,6 +231,38 @@ public class DieuPhoiVanHanhRepository {
                 ORDER BY pcbc.ThoiGianBatDauSuDung DESC
                 """;
         return jdbcTemplate.query(sql, this::mapPhanCongBangChuyen, maLichTrinh);
+    }
+
+    public List<LichSuCapNhatChuyenBayDto> layLichSuCapNhat(String maLichTrinh) {
+        String sql = """
+                SELECT TOP 10
+                    ls.MaLichSuCapNhat,
+                    tk.TenDangNhap,
+                    ls.TrangThaiCu,
+                    ls.TrangThaiMoi,
+                    ls.GioUocTinhCu,
+                    ls.GioUocTinhMoi,
+                    ls.SoPhutChamMoi,
+                    ls.LyDoCapNhat,
+                    ls.NoiDungCapNhat,
+                    ls.ThoiGianCapNhat
+                FROM LICHSUCAPNHAT ls
+                JOIN TAIKHOAN tk ON ls.MaTaiKhoan = tk.MaTaiKhoan
+                WHERE ls.MaLichTrinh = ?
+                ORDER BY ls.ThoiGianCapNhat DESC
+                """;
+        return jdbcTemplate.query(sql, (rs, rowNum) -> new LichSuCapNhatChuyenBayDto(
+                rs.getString("MaLichSuCapNhat"),
+                rs.getString("TenDangNhap"),
+                rs.getString("TrangThaiCu"),
+                rs.getString("TrangThaiMoi"),
+                formatTimestamp(rs.getTimestamp("GioUocTinhCu")),
+                formatTimestamp(rs.getTimestamp("GioUocTinhMoi")),
+                toInteger(rs.getObject("SoPhutChamMoi")),
+                rs.getString("LyDoCapNhat"),
+                rs.getString("NoiDungCapNhat"),
+                formatTimestamp(rs.getTimestamp("ThoiGianCapNhat"))
+        ), maLichTrinh);
     }
 
     public List<CongOptionDto> layCongKhaDung(LocalDateTime batDau, LocalDateTime ketThuc, String maNhaGa, String maPhanCongBoQua) {
@@ -426,15 +477,25 @@ public class DieuPhoiVanHanhRepository {
                 formatTimestamp(rs.getTimestamp("GioDuKienHaCanh")),
                 formatTimestamp(rs.getTimestamp("GioUocTinhKhoiHanh")),
                 formatTimestamp(rs.getTimestamp("GioUocTinhHaCanh")),
+                formatTimestamp(rs.getTimestamp("GioThucTeKhoiHanh")),
+                formatTimestamp(rs.getTimestamp("GioThucTeHaCanh")),
                 rs.getString("TrangThaiHienTai"),
+                toInteger(rs.getObject("SoPhutCham")),
+                rs.getString("LyDoChamHoacHuy"),
                 rs.getString("MaPhanCongCong"),
                 maCong,
                 rs.getString("TenCong"),
+                rs.getString("TenNhaGaCong"),
                 rs.getString("TrangThaiCong"),
+                formatTimestamp(rs.getTimestamp("ThoiGianBatDauSuDungCong")),
+                formatTimestamp(rs.getTimestamp("ThoiGianKetThucSuDungCong")),
                 rs.getString("MaPhanCongBangChuyen"),
                 maBangChuyen,
                 rs.getString("TenBangChuyenHanhLy"),
+                rs.getString("TenNhaGaBangChuyen"),
                 rs.getString("TrangThaiBangChuyen"),
+                formatTimestamp(rs.getTimestamp("ThoiGianBatDauSuDungBangChuyen")),
+                formatTimestamp(rs.getTimestamp("ThoiGianKetThucSuDungBangChuyen")),
                 taoTrangThaiDieuPhoi(maCong, maBangChuyen)
         );
     }
@@ -492,6 +553,13 @@ public class DieuPhoiVanHanhRepository {
     private Long dem(String sql, Object... params) {
         Long value = jdbcTemplate.queryForObject(sql, Long.class, params);
         return value == null ? 0L : value;
+    }
+
+    private Integer toInteger(Object value) {
+        if (value instanceof Number number) {
+            return number.intValue();
+        }
+        return null;
     }
 
     private String formatDate(Date date) {

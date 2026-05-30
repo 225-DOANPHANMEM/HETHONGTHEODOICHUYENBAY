@@ -132,7 +132,7 @@
 
 .dispatch-admin-stats {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 14px;
   margin-bottom: 18px;
 }
@@ -202,10 +202,14 @@
 
 .dispatch-admin-filters {
   display: grid;
-  grid-template-columns: minmax(230px, 1.4fr) repeat(5, minmax(140px, 1fr)) auto;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
   gap: 12px;
   align-items: end;
   margin-bottom: 16px;
+}
+
+.dispatch-admin-field--wide {
+  grid-column: span 2;
 }
 
 .dispatch-admin-field {
@@ -264,6 +268,11 @@
   gap: 8px;
 }
 
+.dispatch-admin-filter-actions {
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
 .dispatch-admin-table-wrap {
   width: 100%;
   overflow-x: auto;
@@ -273,7 +282,7 @@
 
 .dispatch-admin-table {
   width: 100%;
-  min-width: 1520px;
+  min-width: 1680px;
   border-collapse: collapse;
   background: #ffffff;
 }
@@ -381,6 +390,25 @@
   background: #f8fafc;
 }
 
+.dispatch-admin-actions button[title="Xem chi tiết"] {
+  color: #0369a1;
+  background: #f0f9ff;
+  border-color: #bae6fd;
+}
+
+.dispatch-admin-actions button[title="Cập nhật tình hình"] {
+  color: #0f766e;
+  background: #ccfbf1;
+  border-color: #99f6e4;
+}
+
+.dispatch-admin-actions button[title="Phân công cổng"],
+.dispatch-admin-actions button[title="Phân công băng chuyền"] {
+  color: #4338ca;
+  background: #eef2ff;
+  border-color: #c7d2fe;
+}
+
 .dispatch-admin-actions .dispatch-admin-actions__danger {
   color: #b91c1c;
 }
@@ -409,9 +437,9 @@
 }
 
 .dispatch-admin-modal {
-  width: min(760px, 100%);
+  width: min(900px, 100%);
   max-height: calc(100vh - 40px);
-  overflow: auto;
+  overflow-y: auto;
   border-radius: 8px;
   background: #ffffff;
   box-shadow: 0 24px 80px rgba(15, 23, 42, 0.28);
@@ -454,7 +482,7 @@
 
 .dispatch-admin-summary {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 10px;
   padding: 18px;
   border-bottom: 1px solid #e2e8f0;

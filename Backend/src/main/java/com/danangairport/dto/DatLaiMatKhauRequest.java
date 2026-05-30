@@ -3,7 +3,7 @@ package com.danangairport.dto;
 import jakarta.validation.constraints.NotBlank;
 
 public class DatLaiMatKhauRequest {
-    @NotBlank(message = "Mat khau moi khong duoc de trong")
+    @NotBlank(message = "Mật khẩu mới không được để trống")
     private String matKhauMoi;
 
     public String getMatKhauMoi() {
