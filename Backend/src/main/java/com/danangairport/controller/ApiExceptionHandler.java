@@ -2,6 +2,7 @@ package com.danangairport.controller;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.dao.DataAccessException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -23,5 +24,12 @@ public class ApiExceptionHandler {
         FieldError error = ex.getBindingResult().getFieldError();
         String message = error != null ? error.getDefaultMessage() : "Du lieu khong hop le";
         return ResponseEntity.badRequest().body(Map.of("message", message));
+    }
+
+    @ExceptionHandler(DataAccessException.class)
+    public ResponseEntity<Map<String, String>> handleDataAccess(DataAccessException ex) {
+        Throwable cause = ex.getMostSpecificCause();
+        String message = cause == null || cause.getMessage() == null ? "Loi truy cap co so du lieu" : cause.getMessage();
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", message));
     }
 }

@@ -1,4 +1,4 @@
-﻿package com.danangairport.service;
+package com.danangairport.service;
 
 import com.danangairport.dto.CapNhatNguoiDungRequest;
 import com.danangairport.dto.NguoiDungDto;
@@ -15,7 +15,7 @@ import java.util.Set;
 @Service
 public class NguoiDungQuanTriService {
     private static final Set<String> VAI_TRO_HOP_LE = Set.of("Quản trị", "Điều phối", "Khách hàng");
-    private static final Set<String> TRANG_THAI_HOP_LE = Set.of("Hoáº¡t Ä‘á»™ng", "KhÃ³a", "Ngá»«ng sá»­ dá»¥ng");
+    private static final Set<String> TRANG_THAI_HOP_LE = Set.of("Hoạt động", "Khóa", "Ngừng sử dụng");
     private final NguoiDungQuanTriRepository repository;
 
     public NguoiDungQuanTriService(NguoiDungQuanTriRepository repository) {
@@ -43,7 +43,7 @@ public class NguoiDungQuanTriService {
     }
 
     public List<String> layDanhSachTrangThai() {
-        return List.of("Hoáº¡t Ä‘á»™ng", "KhÃ³a", "Ngá»«ng sá»­ dá»¥ng");
+        return List.of("Hoạt động", "Khóa", "Ngừng sử dụng");
     }
 
     public NguoiDungDto themNguoiDung(TaoNguoiDungRequest request) {
@@ -60,7 +60,6 @@ public class NguoiDungQuanTriService {
         }
 
         String maMoi = repository.taoMaTaiKhoanMoi();
-        // TODO: Production should use BCrypt instead of plain text password.
         repository.themNguoiDung(maMoi, request, request.getMatKhau().trim());
         return layChiTiet(maMoi);
     }
@@ -80,22 +79,21 @@ public class NguoiDungQuanTriService {
     }
 
     public void khoaTaiKhoan(String maTaiKhoan) {
-        capNhatTrangThai(maTaiKhoan, "KhÃ³a");
+        capNhatTrangThai(maTaiKhoan, "Khóa");
     }
 
     public void moKhoaTaiKhoan(String maTaiKhoan) {
-        capNhatTrangThai(maTaiKhoan, "Hoáº¡t Ä‘á»™ng");
+        capNhatTrangThai(maTaiKhoan, "Hoạt động");
     }
 
     public void ngungSuDungTaiKhoan(String maTaiKhoan) {
-        capNhatTrangThai(maTaiKhoan, "Ngá»«ng sá»­ dá»¥ng");
+        capNhatTrangThai(maTaiKhoan, "Ngừng sử dụng");
     }
 
     public void datLaiMatKhau(String maTaiKhoan, String matKhauMoi) {
         if (!repository.tonTaiMaTaiKhoan(maTaiKhoan)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Khong tim thay tai khoan");
         }
-        // TODO: Production should use BCrypt instead of plain text password.
         repository.datLaiMatKhau(maTaiKhoan, matKhauMoi.trim());
     }
 

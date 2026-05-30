@@ -13,7 +13,7 @@ import OperatingCatalogPage from "./pages/admin/OperatingCatalogPage.jsx";
 import FlightManagementPage from "./pages/admin/FlightManagementPage.jsx";
 import DispatchPage from "./pages/admin/DispatchPage.jsx";
 import NotificationHistoryPage from "./pages/admin/NotificationHistoryPage.jsx";
-import ReportPage from "./pages/admin/ReportPage.jsx";
+import BaoCaoVanHanh from "./pages/admin/BaoCaoVanHanh.jsx";
 
 import StaffLayout from "./layouts/StaffLayout.jsx";
 import StaffLoginPage from "./pages/staff/StaffLoginPage.jsx";
@@ -146,7 +146,7 @@ function AdminPage({ page }) {
   }
 
   if (page === "reports") {
-    return <ReportPage onNavigate={handleNavigate} />;
+    return <BaoCaoVanHanh onNavigate={handleNavigate} />;
   }
 
   return <DashboardPage onNavigate={handleNavigate} />;

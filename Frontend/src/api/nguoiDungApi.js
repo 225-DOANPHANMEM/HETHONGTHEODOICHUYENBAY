@@ -11,7 +11,7 @@ async function callApi(url, options = {}) {
     try {
       const data = await response.json();
       message = data.message || message;
-    } catch (_) {
+    } catch {
       message = response.statusText || message;
     }
     throw new Error(message);

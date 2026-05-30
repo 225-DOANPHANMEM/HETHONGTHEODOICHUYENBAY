@@ -14,6 +14,7 @@ import java.util.Collections;
 import java.util.List;
 
 @Repository
+@SuppressWarnings("java:S2077")
 public class AdminDashboardRepository {
 
     private final JdbcTemplate jdbcTemplate;

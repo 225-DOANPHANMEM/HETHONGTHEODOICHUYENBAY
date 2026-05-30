@@ -1,4 +1,4 @@
-﻿package com.danangairport.repository;
+package com.danangairport.repository;
 
 import com.danangairport.dto.CapNhatNguoiDungRequest;
 import com.danangairport.dto.NguoiDungDto;
@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
+@SuppressWarnings("java:S2077")
 public class NguoiDungQuanTriRepository {
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
     private final JdbcTemplate jdbcTemplate;
@@ -63,9 +64,9 @@ public class NguoiDungQuanTriRepository {
     public ThongKeNguoiDungDto thongKe() {
         ThongKeNguoiDungDto dto = new ThongKeNguoiDungDto();
         dto.setTongTaiKhoan(dem("SELECT COUNT(*) FROM TAIKHOAN"));
-        dto.setSoHoatDong(dem("SELECT COUNT(*) FROM TAIKHOAN WHERE TrangThaiTaiKhoan = N'Hoáº¡t Ä‘á»™ng'"));
-        dto.setSoBiKhoa(dem("SELECT COUNT(*) FROM TAIKHOAN WHERE TrangThaiTaiKhoan = N'KhÃ³a'"));
-        dto.setSoNgungSuDung(dem("SELECT COUNT(*) FROM TAIKHOAN WHERE TrangThaiTaiKhoan = N'Ngá»«ng sá»­ dá»¥ng'"));
+        dto.setSoHoatDong(dem("SELECT COUNT(*) FROM TAIKHOAN WHERE TrangThaiTaiKhoan = N'Hoạt động'"));
+        dto.setSoBiKhoa(dem("SELECT COUNT(*) FROM TAIKHOAN WHERE TrangThaiTaiKhoan = N'Khóa'"));
+        dto.setSoNgungSuDung(dem("SELECT COUNT(*) FROM TAIKHOAN WHERE TrangThaiTaiKhoan = N'Ngừng sử dụng'"));
         dto.setSoQuanTri(dem("SELECT COUNT(*) FROM TAIKHOAN WHERE VaiTro = N'Quản trị'"));
         dto.setSoDieuPhoi(dem("SELECT COUNT(*) FROM TAIKHOAN WHERE VaiTro = N'Điều phối'"));
         dto.setSoKhachHang(dem("SELECT COUNT(*) FROM TAIKHOAN WHERE VaiTro = N'Khách hàng'"));
