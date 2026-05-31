@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { login } from "../../api";
 import "../../styles/admin/LoginPage.css";
 
 function LoginPage({ onLoginSuccess }) {
@@ -7,26 +8,46 @@ function LoginPage({ onLoginSuccess }) {
     password: "",
     remember: false,
   });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleChange = (event) => {
     const { name, value, type, checked } = event.target;
-
+    setError("");
     setFormData({
       ...formData,
       [name]: type === "checkbox" ? checked : value,
     });
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
     if (!formData.username.trim() || !formData.password.trim()) {
-      alert("Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu.");
+      setError("Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu.");
       return;
     }
 
-    alert("Đăng nhập thành công. Chuyển đến dashboard (preview).");
-    if (typeof onLoginSuccess === "function") onLoginSuccess();
+    setLoading(true);
+    setError("");
+
+    try {
+      const user = await login(formData.username.trim(), formData.password);
+
+      if (user.vaiTro !== "Quản trị") {
+        setError("Tài khoản này không có quyền truy cập hệ thống quản trị.");
+        return;
+      }
+
+      // Lưu thông tin đăng nhập vào sessionStorage
+      sessionStorage.setItem("adminUser", JSON.stringify(user));
+
+      if (typeof onLoginSuccess === "function") onLoginSuccess();
+    } catch (err) {
+      setError(err.message || "Đăng nhập thất bại.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -123,8 +144,18 @@ function LoginPage({ onLoginSuccess }) {
               </button>
             </div>
 
-            <button className="login-form__submit-button" type="submit">
-              Đăng Nhập
+            {error && (
+              <p style={{ color: "#dc2626", fontSize: "14px", margin: "0 0 8px" }}>
+                {error}
+              </p>
+            )}
+
+            <button
+              className="login-form__submit-button"
+              type="submit"
+              disabled={loading}
+            >
+              {loading ? "Đang đăng nhập..." : "Đăng Nhập"}
             </button>
 
             <p className="login-form__note">

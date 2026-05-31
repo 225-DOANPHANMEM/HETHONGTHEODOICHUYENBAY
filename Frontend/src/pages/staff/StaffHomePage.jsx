@@ -1,11 +1,26 @@
-import { loadStaffFlights } from "../../data/staffData.js";
+import { useEffect, useState } from "react";
+import { getFlights } from "../../api";
+import { mapApiFlightToStaff } from "../../utils/flightMapper";
 import "../../styles/staff/StaffPages.css";
 
 function StaffHomePage({ onNavigate }) {
-  const flights = loadStaffFlights();
+  const [flights, setFlights] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const today = new Date().toISOString().slice(0, 10);
+
+  useEffect(() => {
+    getFlights({ date: today })
+      .then((data) => setFlights(data.map(mapApiFlightToStaff)))
+      .catch(() => setFlights([]))
+      .finally(() => setLoading(false));
+  }, [today]);
+
   const arrivals = flights.filter((item) => item.type === "DEN").length;
   const departures = flights.filter((item) => item.type === "DI").length;
-  const issueFlights = flights.filter((item) => ["DELAYED", "CANCELLED"].includes(item.status)).length;
+  const issueFlights = flights.filter((item) =>
+    ["DELAYED", "CANCELLED"].includes(item.status)
+  ).length;
 
   return (
     <div className="staff-page">
@@ -14,16 +29,41 @@ function StaffHomePage({ onNavigate }) {
           <p className="staff-page__eyebrow">Flight Operations</p>
           <h1 className="staff-page__title">Trang chủ nhân viên điều hành</h1>
           <p className="staff-page__desc">
-            Tra cứu chuyến bay, cập nhật trạng thái, gửi thông báo thay đổi và theo dõi lịch sử cập nhật chuyến bay.
+            Tra cứu chuyến bay, cập nhật trạng thái, gửi thông báo thay đổi và
+            theo dõi lịch sử cập nhật chuyến bay.
           </p>
         </div>
       </div>
 
       <section className="staff-grid staff-grid--4" style={{ marginBottom: 22 }}>
-        <div className="staff-card staff-stat"><div className="staff-stat__icon">📋</div><div><p className="staff-stat__label">Tổng chuyến bay</p><p className="staff-stat__value">{flights.length}</p></div></div>
-        <div className="staff-card staff-stat"><div className="staff-stat__icon">🛫</div><div><p className="staff-stat__label">Chuyến bay đi</p><p className="staff-stat__value">{departures}</p></div></div>
-        <div className="staff-card staff-stat"><div className="staff-stat__icon">🛬</div><div><p className="staff-stat__label">Chuyến bay đến</p><p className="staff-stat__value">{arrivals}</p></div></div>
-        <div className="staff-card staff-stat"><div className="staff-stat__icon">⏱</div><div><p className="staff-stat__label">Chậm / hủy</p><p className="staff-stat__value">{issueFlights}</p></div></div>
+        <div className="staff-card staff-stat">
+          <div className="staff-stat__icon">📋</div>
+          <div>
+            <p className="staff-stat__label">Tổng chuyến bay hôm nay</p>
+            <p className="staff-stat__value">{loading ? "..." : flights.length}</p>
+          </div>
+        </div>
+        <div className="staff-card staff-stat">
+          <div className="staff-stat__icon">🛫</div>
+          <div>
+            <p className="staff-stat__label">Chuyến bay đi</p>
+            <p className="staff-stat__value">{loading ? "..." : departures}</p>
+          </div>
+        </div>
+        <div className="staff-card staff-stat">
+          <div className="staff-stat__icon">🛬</div>
+          <div>
+            <p className="staff-stat__label">Chuyến bay đến</p>
+            <p className="staff-stat__value">{loading ? "..." : arrivals}</p>
+          </div>
+        </div>
+        <div className="staff-card staff-stat">
+          <div className="staff-stat__icon">⏱</div>
+          <div>
+            <p className="staff-stat__label">Chậm / hủy</p>
+            <p className="staff-stat__value">{loading ? "..." : issueFlights}</p>
+          </div>
+        </div>
       </section>
 
       <section className="staff-grid staff-grid--3">
@@ -31,19 +71,34 @@ function StaffHomePage({ onNavigate }) {
           <div className="staff-action-card__icon">🛬</div>
           <h3>Chuyến bay đến</h3>
           <p>Xem danh sách các chuyến bay đang đến sân bay Đà Nẵng.</p>
-          <button className="staff-btn staff-btn--primary" onClick={() => onNavigate("staffFlights", { type: "DEN" })}>Xem ngay</button>
+          <button
+            className="staff-btn staff-btn--primary"
+            onClick={() => onNavigate("staffFlights", { type: "DEN" })}
+          >
+            Xem ngay
+          </button>
         </article>
         <article className="staff-card staff-action-card">
           <div className="staff-action-card__icon">🛫</div>
           <h3>Chuyến bay đi</h3>
           <p>Xem danh sách các chuyến bay khởi hành từ Đà Nẵng.</p>
-          <button className="staff-btn staff-btn--primary" onClick={() => onNavigate("staffFlights", { type: "DI" })}>Xem ngay</button>
+          <button
+            className="staff-btn staff-btn--primary"
+            onClick={() => onNavigate("staffFlights", { type: "DI" })}
+          >
+            Xem ngay
+          </button>
         </article>
         <article className="staff-card staff-action-card">
           <div className="staff-action-card__icon">🔔</div>
           <h3>Thông báo thay đổi</h3>
           <p>Gửi thông báo khi chuyến bay có thay đổi trạng thái.</p>
-          <button className="staff-btn staff-btn--secondary" onClick={() => onNavigate("staffNotifications")}>Gửi thông báo</button>
+          <button
+            className="staff-btn staff-btn--secondary"
+            onClick={() => onNavigate("staffNotifications")}
+          >
+            Gửi thông báo
+          </button>
         </article>
       </section>
     </div>
