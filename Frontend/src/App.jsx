@@ -99,12 +99,22 @@ function App() {
 
 function AdminLoginRoute() {
   const navigate = useNavigate();
+  const storedAccount = getStoredAdminAccount();
+
+  if (storedAccount) {
+    return <Navigate to="/admin/dashboard" replace />;
+  }
 
   return <LoginPage onLoginSuccess={() => navigate("/admin/dashboard")} />;
 }
 
 function AdminPage({ page }) {
   const navigate = useNavigate();
+  const storedAccount = getStoredAdminAccount();
+
+  if (!storedAccount) {
+    return <Navigate to="/admin/login" replace />;
+  }
 
   const adminPathMap = {
     dashboard: "/admin/dashboard",
@@ -150,6 +160,19 @@ function AdminPage({ page }) {
   }
 
   return <DashboardPage onNavigate={handleNavigate} />;
+}
+
+function getStoredAdminAccount() {
+  try {
+    const rawAccount =
+      localStorage.getItem("adminAccount") ||
+      sessionStorage.getItem("adminAccount");
+    return rawAccount ? JSON.parse(rawAccount) : null;
+  } catch {
+    localStorage.removeItem("adminAccount");
+    sessionStorage.removeItem("adminAccount");
+    return null;
+  }
 }
 
 function StaffLoginRoute() {
