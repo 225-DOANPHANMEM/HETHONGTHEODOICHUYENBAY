@@ -6,6 +6,7 @@ D:\HK225\225DOANPHANMEM\HeThongTheoGioiChuyenBay\Backend\src\main\java\com\danan
 D:\HK225\225DOANPHANMEM\HeThongTheoGioiChuyenBay\Backend\src\main\java\com\danangairport\controller\ApiExceptionHandler.java
 D:\HK225\225DOANPHANMEM\HeThongTheoGioiChuyenBay\Backend\src\main\java\com\danangairport\controller\BaoCaoVanHanhController.java
 D:\HK225\225DOANPHANMEM\HeThongTheoGioiChuyenBay\Backend\src\main\java\com\danangairport\controller\ChuyenBayQuanTriController.java
+D:\HK225\225DOANPHANMEM\HeThongTheoGioiChuyenBay\Backend\src\main\java\com\danangairport\controller\CustomerFlightController.java
 D:\HK225\225DOANPHANMEM\HeThongTheoGioiChuyenBay\Backend\src\main\java\com\danangairport\controller\DanhMucVanHanhController.java
 D:\HK225\225DOANPHANMEM\HeThongTheoGioiChuyenBay\Backend\src\main\java\com\danangairport\controller\DieuPhoiVanHanhController.java
 D:\HK225\225DOANPHANMEM\HeThongTheoGioiChuyenBay\Backend\src\main\java\com\danangairport\controller\HealthController.java
@@ -42,6 +43,8 @@ D:\HK225\225DOANPHANMEM\HeThongTheoGioiChuyenBay\Backend\src\main\java\com\danan
 D:\HK225\225DOANPHANMEM\HeThongTheoGioiChuyenBay\Backend\src\main\java\com\danangairport\dto\ChuyenBayOptionDto.java
 D:\HK225\225DOANPHANMEM\HeThongTheoGioiChuyenBay\Backend\src\main\java\com\danangairport\dto\CongDto.java
 D:\HK225\225DOANPHANMEM\HeThongTheoGioiChuyenBay\Backend\src\main\java\com\danangairport\dto\CongOptionDto.java
+D:\HK225\225DOANPHANMEM\HeThongTheoGioiChuyenBay\Backend\src\main\java\com\danangairport\dto\CustomerFlightDto.java
+D:\HK225\225DOANPHANMEM\HeThongTheoGioiChuyenBay\Backend\src\main\java\com\danangairport\dto\CustomerNotificationDto.java
 D:\HK225\225DOANPHANMEM\HeThongTheoGioiChuyenBay\Backend\src\main\java\com\danangairport\dto\DashboardChuyenBayCanChuYDto.java
 D:\HK225\225DOANPHANMEM\HeThongTheoGioiChuyenBay\Backend\src\main\java\com\danangairport\dto\DashboardLichSuCapNhatDto.java
 D:\HK225\225DOANPHANMEM\HeThongTheoGioiChuyenBay\Backend\src\main\java\com\danangairport\dto\DashboardThongBaoDto.java
@@ -82,6 +85,7 @@ D:\HK225\225DOANPHANMEM\HeThongTheoGioiChuyenBay\Backend\src\main\java\com\danan
 D:\HK225\225DOANPHANMEM\HeThongTheoGioiChuyenBay\Backend\src\main\java\com\danangairport\repository\BaoCaoVanHanhRepository.java
 D:\HK225\225DOANPHANMEM\HeThongTheoGioiChuyenBay\Backend\src\main\java\com\danangairport\repository\ChuyenBayQuanTriRepository.java
 D:\HK225\225DOANPHANMEM\HeThongTheoGioiChuyenBay\Backend\src\main\java\com\danangairport\repository\ChuyenBayRepository.java
+D:\HK225\225DOANPHANMEM\HeThongTheoGioiChuyenBay\Backend\src\main\java\com\danangairport\repository\CustomerFlightRepository.java
 D:\HK225\225DOANPHANMEM\HeThongTheoGioiChuyenBay\Backend\src\main\java\com\danangairport\repository\DanhMucVanHanhRepository.java
 D:\HK225\225DOANPHANMEM\HeThongTheoGioiChuyenBay\Backend\src\main\java\com\danangairport\repository\DieuPhoiVanHanhRepository.java
 D:\HK225\225DOANPHANMEM\HeThongTheoGioiChuyenBay\Backend\src\main\java\com\danangairport\repository\NguoiDungQuanTriRepository.java
@@ -91,6 +95,7 @@ D:\HK225\225DOANPHANMEM\HeThongTheoGioiChuyenBay\Backend\src\main\java\com\danan
 D:\HK225\225DOANPHANMEM\HeThongTheoGioiChuyenBay\Backend\src\main\java\com\danangairport\service\AdminKiemTraService.java
 D:\HK225\225DOANPHANMEM\HeThongTheoGioiChuyenBay\Backend\src\main\java\com\danangairport\service\BaoCaoVanHanhService.java
 D:\HK225\225DOANPHANMEM\HeThongTheoGioiChuyenBay\Backend\src\main\java\com\danangairport\service\ChuyenBayQuanTriService.java
+D:\HK225\225DOANPHANMEM\HeThongTheoGioiChuyenBay\Backend\src\main\java\com\danangairport\service\CustomerFlightService.java
 D:\HK225\225DOANPHANMEM\HeThongTheoGioiChuyenBay\Backend\src\main\java\com\danangairport\service\DanhMucVanHanhService.java
 D:\HK225\225DOANPHANMEM\HeThongTheoGioiChuyenBay\Backend\src\main\java\com\danangairport\service\DieuPhoiVanHanhService.java
 D:\HK225\225DOANPHANMEM\HeThongTheoGioiChuyenBay\Backend\src\main\java\com\danangairport\service\NguoiDungQuanTriService.java
