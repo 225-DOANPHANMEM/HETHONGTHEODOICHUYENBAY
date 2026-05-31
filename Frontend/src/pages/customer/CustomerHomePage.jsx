@@ -1,10 +1,36 @@
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { loadCustomerFlights } from "../../data/customerData.js";
+import { layDanhSachChuyenBayKhachHang } from "../../api/customerApi.js";
 import "../../styles/customer/CustomerPages.css";
 
 function CustomerHomePage() {
   const navigate = useNavigate();
-  const flights = loadCustomerFlights();
+  const [flights, setFlights] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let ignore = false;
+
+    async function loadFlights() {
+      try {
+        setLoading(true);
+        setError("");
+        const data = await layDanhSachChuyenBayKhachHang();
+        if (!ignore) setFlights(data || []);
+      } catch (err) {
+        if (!ignore) setError(err.message || "Không thể tải dữ liệu chuyến bay.");
+      } finally {
+        if (!ignore) setLoading(false);
+      }
+    }
+
+    loadFlights();
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
   const arrivals = flights.filter((item) => item.type === "DEN");
   const departures = flights.filter((item) => item.type === "DI");
   const delayed = flights.filter((item) => item.status === "DELAYED");
@@ -24,9 +50,9 @@ function CustomerHomePage() {
             Tra cứu chuyến bay đến và đi tại sân bay Đà Nẵng
           </h1>
           <p className="customer-desc">
-            Hành khách có thể xem danh sách chuyến bay, trạng thái, giờ dự kiến,
-            cổng ra máy bay và băng chuyền hành lý theo thời gian cập nhật mới
-            nhất.
+            Hành khách có thể xem danh sách chuyến bay, trạng thái, giờ dự
+            kiến, cổng ra máy bay và băng chuyền hành lý theo dữ liệu mới nhất
+            từ hệ thống.
           </p>
         </div>
 
@@ -38,28 +64,27 @@ function CustomerHomePage() {
               name="keyword"
               placeholder="Nhập số hiệu, hãng bay, điểm đi/đến..."
             />
-            <button
-              className="customer-btn customer-btn--primary"
-              type="submit"
-            >
+            <button className="customer-btn customer-btn--primary" type="submit">
               Tra cứu
             </button>
           </div>
         </form>
       </section>
 
+      {error ? <div className="customer-empty">{error}</div> : null}
+
       <section className="customer-stat-grid">
         <div className="customer-stat-card">
           <p>Chuyến bay đến</p>
-          <strong>{arrivals.length}</strong>
+          <strong>{loading ? "--" : arrivals.length}</strong>
         </div>
         <div className="customer-stat-card">
           <p>Chuyến bay đi</p>
-          <strong>{departures.length}</strong>
+          <strong>{loading ? "--" : departures.length}</strong>
         </div>
         <div className="customer-stat-card">
           <p>Chậm chuyến</p>
-          <strong>{delayed.length}</strong>
+          <strong>{loading ? "--" : delayed.length}</strong>
         </div>
       </section>
 
@@ -87,7 +112,7 @@ function CustomerHomePage() {
         <div className="customer-card">
           <h3>Thông báo chuyến bay</h3>
           <p>
-            Nhận thông báo khi chuyến bay đang theo dõi có thay đổi trạng thái.
+            Xem thông báo khi chuyến bay đang theo dõi có thay đổi trạng thái.
           </p>
           <button
             className="customer-btn customer-btn--secondary"

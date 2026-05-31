@@ -25,7 +25,7 @@ function CustomerFlightTable({ flights, onNavigate, onViewDetail }) {
         </thead>
         <tbody>
           {flights.map((flight) => (
-            <tr key={flight.id}>
+            <tr key={flight.id || flight.flightNo}>
               <td>
                 <span className="customer-flight-no">{flight.flightNo}</span>
               </td>
@@ -38,18 +38,18 @@ function CustomerFlightTable({ flights, onNavigate, onViewDetail }) {
                   {flight.type === "DEN" ? "Chuyến bay đến" : "Chuyến bay đi"}
                 </div>
               </td>
-              <td>{flight.date}</td>
+              <td>{flight.date || "--"}</td>
               <td>
-                {flight.estimatedTime || flight.scheduledTime}
+                {flight.estimatedTime || flight.scheduledTime || "--"}
                 <div className="customer-muted">
-                  Lịch: {flight.scheduledTime}
+                  Lịch: {flight.scheduledTime || "--"}
                 </div>
               </td>
               <td>{flight.gate || "--"}</td>
               <td>{flight.carousel || "--"}</td>
               <td>
                 <span className={getStatusClass(flight.status)}>
-                  {getStatusLabel(flight.status)}
+                  {getStatusLabel(flight.status, flight.statusText)}
                 </span>
               </td>
               <td>
@@ -57,8 +57,9 @@ function CustomerFlightTable({ flights, onNavigate, onViewDetail }) {
                   type="button"
                   className="customer-btn customer-btn--secondary"
                   onClick={() => {
-                    if (onViewDetail) onViewDetail(flight.id);
-                    else onNavigate?.("customerDetail", flight.flightNo);
+                    const id = flight.id || flight.flightNo;
+                    if (onViewDetail) onViewDetail(id);
+                    else onNavigate?.("customerDetail", id);
                   }}
                 >
                   Chi tiết

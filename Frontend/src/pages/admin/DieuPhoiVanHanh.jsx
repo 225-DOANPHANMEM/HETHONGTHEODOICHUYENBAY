@@ -41,7 +41,8 @@ const DISPATCH_STAT_CARDS = [
   { key: "soBangChuyenBaoTri", label: "Băng chuyền bảo trì", icon: "fa-solid fa-screwdriver-wrench" },
 ];
 
-const MAIN_STATUSES = ["Đã lên lịch", "Đang làm thủ tục", "Đang bay", "Chậm chuyến", "Hủy chuyến", "Hoàn thành"];
+const MAIN_STATUSES = ["Đã lên lịch", "Đang làm thủ tục", "Đang bay", "Đã hạ cánh", "Chậm chuyến", "Hủy chuyến", "Hoàn thành"];
+const HIDDEN_STATUS_OPTIONS = new Set(["Đã xóa"]);
 
 function DieuPhoiVanHanh({ onNavigate }) {
   const [filters, setFilters] = useState(EMPTY_FILTERS);
@@ -60,7 +61,7 @@ function DieuPhoiVanHanh({ onNavigate }) {
   const [formData, setFormData] = useState({});
 
   const visibleStatuses = useMemo(() => {
-    const options = flightStatuses.filter((status) => status !== "Đã hạ cánh" && status !== "Đã xóa");
+    const options = flightStatuses.filter((status) => !HIDDEN_STATUS_OPTIONS.has(status));
     return options.length ? options : MAIN_STATUSES;
   }, [flightStatuses]);
 
@@ -105,7 +106,13 @@ function DieuPhoiVanHanh({ onNavigate }) {
   }, [loadCommonData]);
 
   useEffect(() => {
-    loadRows();
+    let cancelled = false;
+    Promise.resolve().then(() => {
+      if (!cancelled) loadRows();
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [loadRows]);
 
   const reloadAll = async () => {
@@ -169,37 +176,50 @@ function DieuPhoiVanHanh({ onNavigate }) {
     }
   };
 
+  const resourceModalType = modal?.type;
+  const gateAssignmentToIgnore = modal?.item?.maPhanCongCong || "";
+  const baggageAssignmentToIgnore = modal?.item?.maPhanCongBangChuyen || "";
+
   const handleFormChange = (event) => {
     const { name, value } = event.target;
     setFormData((current) => ({ ...current, [name]: value }));
   };
 
   const loadAvailableResources = useCallback(async () => {
-    if (!["gate", "baggage"].includes(modal?.type)) return;
+    const resourceType = resourceModalType;
+    if (!["gate", "baggage"].includes(resourceType)) return;
     if (!formData.thoiGianBatDauSuDung || !formData.thoiGianKetThucSuDung) return;
 
-    setModal((current) => current ? { ...current, loadingAvailable: true } : current);
+    setModal((current) => current?.type === resourceType ? { ...current, loadingAvailable: true } : current);
     try {
       const filtersForApi = {
         thoiGianBatDau: formData.thoiGianBatDauSuDung,
         thoiGianKetThuc: formData.thoiGianKetThucSuDung,
         maNhaGa: formData.maNhaGa,
       };
-      if (modal.type === "gate") {
+      if (resourceType === "gate") {
         filtersForApi.loaiCong = formData.loaiCong;
-        filtersForApi.maPhanCongBoQua = modal.item.maPhanCongCong || "";
+        filtersForApi.maPhanCongBoQua = gateAssignmentToIgnore;
         const data = await layCongKhaDung(filtersForApi);
-        setModal((current) => current ? { ...current, available: Array.isArray(data) ? data : [], loadingAvailable: false } : current);
+        setModal((current) => current?.type === resourceType ? { ...current, available: Array.isArray(data) ? data : [], loadingAvailable: false } : current);
       } else {
-        filtersForApi.maPhanCongBoQua = modal.item.maPhanCongBangChuyen || "";
+        filtersForApi.maPhanCongBoQua = baggageAssignmentToIgnore;
         const data = await layBangChuyenKhaDung(filtersForApi);
-        setModal((current) => current ? { ...current, available: Array.isArray(data) ? data : [], loadingAvailable: false } : current);
+        setModal((current) => current?.type === resourceType ? { ...current, available: Array.isArray(data) ? data : [], loadingAvailable: false } : current);
       }
     } catch (err) {
-      setModal((current) => current ? { ...current, available: [], loadingAvailable: false } : current);
+      setModal((current) => current?.type === resourceType ? { ...current, available: [], loadingAvailable: false } : current);
       setError(err.message || "Không tải được tài nguyên khả dụng.");
     }
-  }, [formData, modal]);
+  }, [
+    formData.thoiGianBatDauSuDung,
+    formData.thoiGianKetThucSuDung,
+    formData.maNhaGa,
+    formData.loaiCong,
+    resourceModalType,
+    gateAssignmentToIgnore,
+    baggageAssignmentToIgnore,
+  ]);
 
   useEffect(() => {
     let timeoutId;
@@ -215,7 +235,7 @@ function DieuPhoiVanHanh({ onNavigate }) {
     event.preventDefault();
     if (!modal) return;
 
-    const validationMessage = validateStatusForm(formData);
+    const validationMessage = validateStatusForm(formData, modal.item);
     if (validationMessage) {
       setError(validationMessage);
       return;
@@ -225,10 +245,13 @@ function DieuPhoiVanHanh({ onNavigate }) {
     setError("");
     setSuccess("");
     try {
-      await capNhatTinhHinhDieuPhoi(modal.item.maLichTrinh, normalizeStatusPayload(formData));
+      const updatedFlight = await capNhatTinhHinhDieuPhoi(modal.item.maLichTrinh, normalizeStatusPayload(formData));
       setSuccess("Cập nhật tình hình chuyến bay thành công.");
       setModal(null);
       await reloadAll();
+      if (updatedFlight?.maLichTrinh) {
+        setRows((current) => current.map((row) => mergeUpdatedFlight(row, updatedFlight)));
+      }
     } catch (err) {
       setError(err.message || "Cập nhật trạng thái thất bại.");
     } finally {
@@ -520,6 +543,10 @@ function DispatchTable({ rows, onView, onStatus, onGate, onBaggage, onDeactivate
       <tbody>
         {rows.map((row) => (
           <tr key={row.maLichTrinh}>
+            {(() => {
+              const delayMinutes = resolveDelayMinutes(row);
+              return (
+                <>
             <td className="dispatch-admin-code">{row.soHieuChuyenBay}</td>
             <td>{displayValue(row.tenHangHangKhong, "Chưa cập nhật")}</td>
             <td><span className="dispatch-admin-badge">{displayValue(row.loaiChuyenBay, "Chưa cập nhật")}</span></td>
@@ -529,7 +556,7 @@ function DispatchTable({ rows, onView, onStatus, onGate, onBaggage, onDeactivate
             <td>{formatDateTime(primaryScheduledTime(row))}</td>
             <td>{formatDateTime(primaryEstimatedTime(row))}</td>
             <td><span className={statusClass(row.trangThaiHienTai)}>{displayValue(row.trangThaiHienTai, "Chưa cập nhật")}</span></td>
-            <td>{displayDelay(row.soPhutCham)}</td>
+            <td>{displayDelay(delayMinutes, row.trangThaiHienTai)}</td>
             <td>{row.tenCong || "Chưa phân công"}</td>
             <td>{row.tenBangChuyenHanhLy || "Chưa phân công"}</td>
             <td><span className={dispatchClass(row.trangThaiDieuPhoi)}>{row.trangThaiDieuPhoi}</span></td>
@@ -559,6 +586,9 @@ function DispatchTable({ rows, onView, onStatus, onGate, onBaggage, onDeactivate
                 )}
               </div>
             </td>
+                </>
+              );
+            })()}
           </tr>
         ))}
       </tbody>
@@ -567,6 +597,11 @@ function DispatchTable({ rows, onView, onStatus, onGate, onBaggage, onDeactivate
 }
 
 function StatusModal({ modal, formData, statuses, saving, onChange, onClose, onSubmit }) {
+  const previewDelayMinutes = resolveDelayMinutes({
+    ...modal.item,
+    ...formData,
+    trangThaiHienTai: formData.trangThaiMoi,
+  });
   return (
     <Modal title="Cập nhật tình hình chuyến bay" onClose={onClose} wide>
       <form onSubmit={onSubmit}>
@@ -603,6 +638,12 @@ function StatusModal({ modal, formData, statuses, saving, onChange, onClose, onS
             <span>Lý do chậm/hủy</span>
             <textarea name="lyDoChamHoacHuy" value={formData.lyDoChamHoacHuy || ""} onChange={onChange} rows={3} />
           </label>
+          {formData.trangThaiMoi === "Chậm chuyến" && (
+            <label className="dispatch-admin-field dispatch-admin-field--full">
+              <span>Số phút chậm dự kiến</span>
+              <input value={displayDelay(previewDelayMinutes, formData.trangThaiMoi)} readOnly />
+            </label>
+          )}
         </div>
         <ModalFooter saving={saving} onClose={onClose} saveLabel="Cập nhật" icon="fa-solid fa-floppy-disk" />
       </form>
@@ -897,8 +938,18 @@ function normalizeStatusPayload(data) {
   };
 }
 
-function validateStatusForm(data) {
+function validateStatusForm(data, item = {}) {
   if (!data.trangThaiMoi) return "Phải chọn trạng thái mới.";
+  if (data.trangThaiMoi === "Chậm chuyến") {
+    const delayMinutes = resolveDelayMinutes({
+      ...item,
+      ...data,
+      trangThaiHienTai: data.trangThaiMoi,
+    });
+    if (delayMinutes <= 0) {
+      return "Cập nhật Chậm chuyến cần nhập giờ ước tính muộn hơn giờ dự kiến để tính số phút chậm.";
+    }
+  }
   if (["Chậm chuyến", "Hủy chuyến"].includes(data.trangThaiMoi) && !data.lyDoChamHoacHuy?.trim()) {
     return "Nhập thiếu lý do chậm/hủy.";
   }
@@ -948,8 +999,27 @@ function displayValue(value, emptyText = "Chưa phân công") {
   return value === null || value === undefined || value === "" ? emptyText : value;
 }
 
-function displayDelay(minutes) {
-  return minutes && minutes > 0 ? `${minutes} phút` : "Đúng giờ";
+function displayDelay(minutes, status = "") {
+  if (minutes && minutes > 0) return `${minutes} phút`;
+  return status === "Chậm chuyến" ? "Chưa tính được" : "Đúng giờ";
+}
+
+function resolveDelayMinutes(item = {}) {
+  const storedDelay = Number(item.soPhutCham);
+  if (Number.isFinite(storedDelay) && storedDelay > 0) {
+    return storedDelay;
+  }
+
+  const scheduledTime = primaryScheduledTime(item);
+  const estimatedTime = primaryEstimatedTime(item);
+  const scheduledDate = scheduledTime ? new Date(scheduledTime) : null;
+  const estimatedDate = estimatedTime ? new Date(estimatedTime) : null;
+  if (!scheduledDate || !estimatedDate || Number.isNaN(scheduledDate.getTime()) || Number.isNaN(estimatedDate.getTime())) {
+    return Number.isFinite(storedDelay) ? Math.max(storedDelay, 0) : 0;
+  }
+
+  const diffMinutes = Math.round((estimatedDate.getTime() - scheduledDate.getTime()) / 60000);
+  return Math.max(diffMinutes, 0);
 }
 
 function formatDate(value) {
@@ -978,6 +1048,7 @@ function statusClass(status) {
     "Đã lên lịch": "dispatch-admin-status dispatch-admin-status--scheduled",
     "Đang làm thủ tục": "dispatch-admin-status dispatch-admin-status--checkin",
     "Đang bay": "dispatch-admin-status dispatch-admin-status--flying",
+    "Đã hạ cánh": "dispatch-admin-status dispatch-admin-status--landed",
     "Chậm chuyến": "dispatch-admin-status dispatch-admin-status--delayed",
     "Hủy chuyến": "dispatch-admin-status dispatch-admin-status--cancelled",
     "Hoàn thành": "dispatch-admin-status dispatch-admin-status--completed",
@@ -1008,6 +1079,7 @@ function flightDetailFields(item) {
 }
 
 function timeDetailFields(item) {
+  const delayMinutes = resolveDelayMinutes(item);
   return [
     { label: "Ngày bay", value: formatDate(item.ngayBay) },
     { label: "Giờ dự kiến khởi hành", value: formatDateTime(item.gioDuKienKhoiHanh) },
@@ -1016,7 +1088,7 @@ function timeDetailFields(item) {
     { label: "Giờ ước tính hạ cánh", value: formatDateTime(item.gioUocTinhHaCanh) },
     { label: "Giờ thực tế khởi hành", value: formatDateTime(item.gioThucTeKhoiHanh) },
     { label: "Giờ thực tế hạ cánh", value: formatDateTime(item.gioThucTeHaCanh) },
-    { label: "Số phút chậm", value: item.soPhutCham ?? 0 },
+    { label: "Số phút chậm", value: displayDelay(delayMinutes, item.trangThaiHienTai) },
     { label: "Lý do chậm/hủy", value: item.lyDoChamHoacHuy },
   ];
 }
@@ -1029,6 +1101,20 @@ function dispatchDetailFields(item) {
     { label: "Nhà ga của băng chuyền", value: item.tenNhaGaBangChuyen, emptyText: "Chưa phân công" },
     { label: "Trạng thái điều phối", value: item.trangThaiDieuPhoi },
   ];
+}
+
+function mergeUpdatedFlight(row, updatedFlight) {
+  if (row.maLichTrinh !== updatedFlight.maLichTrinh) return row;
+  return {
+    ...row,
+    gioUocTinhKhoiHanh: updatedFlight.gioUocTinhKhoiHanh,
+    gioUocTinhHaCanh: updatedFlight.gioUocTinhHaCanh,
+    gioThucTeKhoiHanh: updatedFlight.gioThucTeKhoiHanh,
+    gioThucTeHaCanh: updatedFlight.gioThucTeHaCanh,
+    trangThaiHienTai: updatedFlight.trangThaiHienTai,
+    soPhutCham: resolveDelayMinutes(updatedFlight),
+    lyDoChamHoacHuy: updatedFlight.lyDoChamHoacHuy,
+  };
 }
 
 export default DieuPhoiVanHanh;

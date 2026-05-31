@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thông tin tài khoản</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <style>
+        .sidebar { background: linear-gradient(180deg, #1e2937 0%, #0f172a 100%); }
+    </style>
+</head>
+<body class="min-h-screen flex font-sans bg-gray-50">
+
+    <!-- Sidebar -->
+    <div class="sidebar w-72 text-white flex flex-col">
+        <div class="p-6 border-b border-slate-700">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-plane text-4xl text-blue-400"></i>
+                <div>
+                    <h1 class="text-2xl font-bold">DANANG</h1>
+                    <p class="text-blue-300 text-sm">International Airport</p>
+                </div>
+            </div>
+        </div>
+        <div class="flex-1 p-4 space-y-1">
+            <a href="tracuuchuyenbay.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-700">
+                <i class="fa-solid fa-magnifying-glass"></i><span>Quản lý chuyến bay</span>
+            </a>
+            <a href="thongbaothaydoi.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-700">
+                <i class="fa-solid fa-bell"></i><span>Thông báo thay đổi</span>
+            </a>
+            <a href="lichsucapnhat.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-700">
+                <i class="fa-solid fa-clock-rotate-left"></i><span>Lịch sử cập nhật</span>
+            </a>
+            <a href="taikhoan.html" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-700">
+                <i class="fa-solid fa-user"></i><span>Thông tin tài khoản</span>
+            </a>
+        </div>
+        <div class="p-4 border-t border-slate-700">
+            <button onclick="dangXuat()" class="w-full flex items-center gap-3 px-4 py-3 text-red-400 hover:bg-red-900/30 rounded-xl">
+                <i class="fa-solid fa-right-from-bracket"></i><span>Đăng xuất</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="flex-1 p-8">
+        <div class="max-w-4xl mx-auto">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-3xl font-bold text-gray-800">Thông tin tài khoản</h2>
+            </div>
+
+            <!-- Thông tin cơ bản -->
+            <div class="bg-white rounded-2xl shadow-lg p-8 mb-6">
+                <div class="flex flex-col md:flex-row gap-8">
+                    <!-- Ảnh đại diện -->
+                    <div class="flex flex-col items-center">
+                        <div class="relative">
+                            <img id="anhDaiDien" src="https://ui-avatars.com/api/?name=Nguyen+Van+A&background=1e40af&color=fff&size=150&font-size=0.4" 
+                                 class="w-32 h-32 rounded-full border-4 border-blue-500 object-cover">
+                            <button onclick="doiAnh()" class="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700">
+                                <i class="fa-solid fa-camera"></i>
+                            </button>
+                        </div>
+                        <div class="mt-4 text-center">
+                            <p class="text-sm text-gray-500">Nhân viên điều hành</p>
+                            <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
+                                <i class="fa-solid fa-circle text-xs"></i> Đang hoạt động
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Thông tin cá nhân -->
+                    <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <p class="text-sm text-gray-500 mb-1">Mã nhân viên</p>
+                            <p class="text-lg font-bold" id="maNV">NV001</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500 mb-1">Họ và tên</p>
+                            <p class="text-lg font-semibold" id="hoTen">Nguyễn Văn A</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500 mb-1">Ngày sinh</p>
+                            <p class="text-lg" id="ngaySinh">15/03/1990</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500 mb-1">Giới tính</p>
+                            <p class="text-lg" id="gioiTinh">Nam</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500 mb-1">Số CCCD/CMND</p>
+                            <p class="text-lg font-mono" id="cccd">012345678901</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500 mb-1">Ngày cấp</p>
+                            <p class="text-lg" id="ngayCap">15/03/2015</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500 mb-1">Nơi cấp</p>
+                            <p class="text-lg" id="noiCap">Đà Nẵng</p>
+                        </div>
+                    </div>
+                </div>
+
+                <<div class="mt-6 flex justify-end">
+                    <a href="editThongtinTK.html" class="text-blue-600 hover:text-blue-800 font-medium">
+                        <i class="fa-solid fa-pen"></i> Chỉnh sửa thông tin
+                    </a>
+                </div>
+            </div>
+
+            <!-- Thông tin liên hệ -->
+            <div class="bg-white rounded-2xl shadow-lg p-8 mb-6">
+                <h3 class="font-semibold text-lg mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-address-book text-blue-600"></i>
+                    Thông tin liên hệ
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-sm text-gray-500 mb-1">Số điện thoại</p>
+                        <p class="text-lg"><i class="fa-solid fa-phone text-gray-400 mr-2"></i>0912345678</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500 mb-1">Email</p>
+                        <p class="text-lg"><i class="fa-solid fa-envelope text-gray-400 mr-2"></i>nv001@danangairport.vn</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500 mb-1">Địa chỉ</p>
+                        <p class="text-lg"><i class="fa-solid fa-location-dot text-gray-400 mr-2"></i>123 Nguyễn Văn Linh, Hải Châu, Đà Nẵng</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Thông tin công việc -->
+            <div class="bg-white rounded-2xl shadow-lg p-8 mb-6">
+                <h3 class="font-semibold text-lg mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-briefcase text-blue-600"></i>
+                    Thông tin công việc
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-sm text-gray-500 mb-1">Phòng ban</p>
+                        <p class="text-lg">Phòng Điều hành Chuyến bay</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500 mb-1">Chức vụ</p>
+                        <p class="text-lg">Nhân viên điều hành</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500 mb-1">Ngày vào làm</p>
+                        <p class="text-lg">01/01/2023</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500 mb-1">Kinh nghiệm</p>
+                        <p class="text-lg">2 năm 4 tháng</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Thông tin đăng nhập -->
+            <div class="bg-white rounded-2xl shadow-lg p-8 mb-6">
+                <h3 class="font-semibold text-lg mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-lock text-blue-600"></i>
+                    Thông tin đăng nhập
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-sm text-gray-500 mb-1">Tên đăng nhập</p>
+                        <p class="text-lg font-mono">nv001</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500 mb-1">Mật khẩu</p>
+                        <p class="text-lg">••••••••</p>
+                    </div>
+                </div>
+
+                <div class="mt-4 flex gap-4">
+                    <button onclick="doiMatKhau()" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                        <i class="fa-solid fa-key"></i> Đổi mật khẩu
+                    </button>
+                </div>
+            </div>
+
+            <!-- Thống kê công việc -->
+            <div class="bg-white rounded-2xl shadow-lg p-8">
+                <h3 class="font-semibold text-lg mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-chart-bar text-blue-600"></i>
+                    Thống kê công việc
+                </h3>
+                
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="bg-blue-50 p-4 rounded-xl text-center">
+                        <p class="text-3xl font-bold text-blue-600">156</p>
+                        <p class="text-sm text-gray-500">Chuyến bay đã xử lý</p>
+                    </div>
+                    <div class="bg-green-50 p-4 rounded-xl text-center">
+                        <p class="text-3xl font-bold text-green-600">142</p>
+                        <p class="text-sm text-gray-500">Đúng giờ</p>
+                    </div>
+                    <div class="bg-orange-50 p-4 rounded-xl text-center">
+                        <p class="text-3xl font-bold text-orange-600">14</p>
+                        <p class="text-sm text-gray-500">Chậm giờ</p>
+                    </div>
+                    <div class="bg-purple-50 p-4 rounded-xl text-center">
+                        <p class="text-3xl font-bold text-purple-600">28</p>
+                        <p class="text-sm text-gray-500">Lần cập nhật</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal đổi mật khẩu -->
+    <div id="modalDoiMatKhau" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4">
+            <div class="p-6 border-b flex justify-between items-center">
+                <h3 class="text-xl font-bold">Đổi mật khẩu</h3>
+                <button onclick="dongModal()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fa-solid fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-2">Mật khẩu hiện tại</label>
+                    <input type="password" class="w-full px-4 py-3 border border-gray-300 rounded-xl">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2">Mật khẩu mới</label>
+                    <input type="password" class="w-full px-4 py-3 border border-gray-300 rounded-xl">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2">Xác nhận mật khẩu mới</label>
+                    <input type="password" class="w-full px-4 py-3 border border-gray-300 rounded-xl">
+                </div>
+            </div>
+            <div class="p-6 border-t flex justify-end gap-4">
+                <button onclick="dongModal()" class="px-6 py-2 border border-gray-300 rounded-xl hover:bg-gray-100">Hủy</button>
+                <button onclick="luuMatKhau()" class="px-6 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700">Lưu</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // Thông tin nhân viên mẫu
+    const thongTinNV = {
+        maNV: "NV001",
+        hoTen: "Nguyễn Văn A",
+        ngaySinh: "15/03/1990",
+        gioiTinh: "Nam",
+        cccd: "012345678901",
+        ngayCap: "15/03/2015",
+        noiCap: "Đà Nẵng",
+        sdt: "0912345678",
+        email: "nv001@danangairport.vn",
+        diaChi: "123 Nguyễn Văn Linh, Hải Châu, Đà Nẵng",
+        phongBan: "Phòng Điều hành Chuyến bay",
+        chucVu: "Nhân viên điều hành",
+        ngayVaoLam: "01/01/2023",
+        tenDangNhap: "nv001"
+    };
+
+    // Load thông tin
+    function loadThongTin() {
+        // Lấy từ localStorage hoặc dữ liệu mẫu
+        const data = JSON.parse(localStorage.getItem('thongTinNhanVien')) || thongTinNV;
+        
+        // Hiển thị lên giao diện
+        document.getElementById('maNV').textContent = data.maNV;
+        document.getElementById('hoTen').textContent = data.hoTen;
+        document.getElementById('ngaySinh').textContent = data.ngaySinh;
+        document.getElementById('gioiTinh').textContent = data.gioiTinh;
+        document.getElementById('cccd').textContent = data.cccd;
+        document.getElementById('ngayCap').textContent = data.ngayCap;
+        document.getElementById('noiCap').textContent = data.noiCap;
+        
+        // Cập nhật ảnh đại diện
+        const anhDD = document.getElementById('anhDaiDien');
+        const ten = data.hoTen.split(' ').pop();
+        anhDD.src = `https://ui-avatars.com/api/?name=${ten}&background=1e40af&color=fff&size=150&font-size=0.4`;
+    }
+
+    // Đổi ảnh đại diện
+        function doiAnh() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.onchange = function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    document.getElementById('anhDaiDien').src = event.target.result;
+                    alert("Đã cập nhật ảnh đại diện!");
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+        input.click();
+    }
+
+    function suaThongTin() {
+        alert("Chức năng chỉnh sửa thông tin đang được phát triển!");
+    }
+
+    function doiMatKhau() {
+        document.getElementById('modalDoiMatKhau').classList.remove('hidden');
+    }
+
+    function dongModal() {
+        document.getElementById('modalDoiMatKhau').classList.add('hidden');
+    }
+
+    function luuMatKhau() {
+        const mkMoi = document.querySelectorAll('#modalDoiMatKhau input')[1].value;
+        const xacNhan = document.querySelectorAll('#modalDoiMatKhau input')[2].value;
+
+        if (mkMoi !== xacNhan) {
+            alert("Mật khẩu mới không khớp!");
+            return;
+        }
+
+        if (mkMoi.length < 6) {
+            alert("Mật khẩu phải có ít nhất 6 ký tự!");
+            return;
+        }
+
+        alert("Đổi mật khẩu thành công!");
+        dongModal();
+    }
+
+    function dangXuat() {
+        if (confirm("Bạn có chắc muốn đăng xuất?")) {
+            window.location.href = "dangnhap.html";
+        }
+    }
+
+    // Load khi trang được mở
+    window.onload = () => {
+        loadThongTin();
+    };
+    </script>
+</body>
+</html>

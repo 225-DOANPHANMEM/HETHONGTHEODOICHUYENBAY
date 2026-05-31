@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { layChiTietChuyenBayKhachHang } from "../../api/customerApi.js";
 import {
-  getCustomerFlightById,
-  getCustomerFlightByNo,
   getStatusClass,
   getStatusLabel,
   isFollowingFlight,
@@ -13,16 +12,47 @@ import "../../styles/customer/CustomerPages.css";
 function CustomerFlightDetailPage() {
   const navigate = useNavigate();
   const { flightNo } = useParams();
-  const flight = getCustomerFlightByNo(flightNo) || getCustomerFlightById(1);
+  const [flight, setFlight] = useState(null);
   const [isFollowing, setIsFollowing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    if (flight) setIsFollowing(isFollowingFlight(flight.flightNo));
-  }, [flight]);
+    let ignore = false;
 
-  if (!flight) {
+    async function loadFlight() {
+      try {
+        setLoading(true);
+        setError("");
+        const data = await layChiTietChuyenBayKhachHang(flightNo);
+        if (!ignore) {
+          setFlight(data);
+          setIsFollowing(isFollowingFlight(data.flightNo));
+        }
+      } catch (err) {
+        if (!ignore) setError(err.message || "Không tìm thấy thông tin chuyến bay.");
+      } finally {
+        if (!ignore) setLoading(false);
+      }
+    }
+
+    loadFlight();
+    return () => {
+      ignore = true;
+    };
+  }, [flightNo]);
+
+  if (loading) {
+    return <div className="customer-empty">Đang tải thông tin chuyến bay...</div>;
+  }
+
+  if (error || !flight) {
     return (
-      <div className="customer-empty">Không tìm thấy thông tin chuyến bay.</div>
+      <div className="customer-page">
+        <div className="customer-empty">
+          {error || "Không tìm thấy thông tin chuyến bay."}
+        </div>
+      </div>
     );
   }
 
@@ -37,8 +67,8 @@ function CustomerFlightDetailPage() {
         <div>
           <h2>Chi tiết chuyến bay {flight.flightNo}</h2>
           <p>
-            Thông tin trạng thái, thời gian, cổng ra máy bay và băng chuyền hành
-            lý.
+            Thông tin trạng thái, thời gian, cổng ra máy bay và băng chuyền
+            hành lý.
           </p>
         </div>
         <button
@@ -72,29 +102,41 @@ function CustomerFlightDetailPage() {
               <span>Trạng thái</span>
               <strong>
                 <span className={getStatusClass(flight.status)}>
-                  {getStatusLabel(flight.status)}
+                  {getStatusLabel(flight.status, flight.statusText)}
                 </span>
               </strong>
             </div>
             <div className="customer-info-item">
               <span>Ngày bay</span>
-              <strong>{flight.date}</strong>
+              <strong>{flight.date || "--"}</strong>
             </div>
             <div className="customer-info-item">
-              <span>Giờ dự kiến</span>
-              <strong>{flight.estimatedTime || flight.scheduledTime}</strong>
+              <span>Giờ hiển thị</span>
+              <strong>{flight.estimatedTime || flight.scheduledTime || "--"}</strong>
+            </div>
+            <div className="customer-info-item">
+              <span>Dự kiến khởi hành</span>
+              <strong>{flight.estimatedDeparture || flight.scheduledDeparture || "--"}</strong>
+            </div>
+            <div className="customer-info-item">
+              <span>Dự kiến hạ cánh</span>
+              <strong>{flight.estimatedArrival || flight.scheduledArrival || "--"}</strong>
             </div>
             <div className="customer-info-item">
               <span>Cổng ra máy bay</span>
               <strong>{flight.gate || "--"}</strong>
             </div>
             <div className="customer-info-item">
+              <span>Nhà ga</span>
+              <strong>{flight.terminal || "--"}</strong>
+            </div>
+            <div className="customer-info-item">
               <span>Băng chuyền hành lý</span>
               <strong>{flight.carousel || "--"}</strong>
             </div>
             <div className="customer-info-item">
-              <span>Máy bay</span>
-              <strong>{flight.aircraft}</strong>
+              <span>Chậm</span>
+              <strong>{flight.delayMinutes ? `${flight.delayMinutes} phút` : "--"}</strong>
             </div>
             <div className="customer-info-item">
               <span>Loại chuyến</span>
@@ -109,7 +151,7 @@ function CustomerFlightDetailPage() {
           <h3 style={{ marginTop: 0 }}>Theo dõi chuyến bay</h3>
           <p className="customer-muted" style={{ lineHeight: 1.7 }}>
             Khi theo dõi chuyến bay, hành khách có thể xem nhanh chuyến này
-            trong danh sách theo dõi và nhận thông báo thay đổi.
+            trong danh sách theo dõi và lọc thông báo liên quan.
           </p>
           <button
             type="button"

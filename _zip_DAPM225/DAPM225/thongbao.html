@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thông báo thay đổi chuyến bay</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <style>
+        .sidebar { background: linear-gradient(180deg, #1e2937 0%, #0f172a 100%); }
+    </style>
+</head>
+<body class="min-h-screen flex font-sans bg-gray-50">
+
+    <!-- Sidebar -->
+    <div class="sidebar w-72 text-white flex flex-col">
+        <div class="p-6 border-b border-slate-700">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-plane text-4xl text-blue-400"></i>
+                <div>
+                    <h1 class="text-2xl font-bold">DANANG</h1>
+                    <p class="text-blue-300 text-sm">International Airport</p>
+                </div>
+            </div>
+        </div>
+        <div class="flex-1 p-4 space-y-1">
+            <a href="tracuuchuyenbay.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-700">
+                <i class="fa-solid fa-magnifying-glass"></i><span>Quản lý chuyến bay</span>
+            </a>
+            <a href="capnhattrangthai.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-700">
+                <i class="fa-solid fa-edit"></i><span>Cập nhật trạng thái</span>
+            </a>
+            <a href="thongbaothaydoi.html" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-700">
+                <i class="fa-solid fa-bell"></i><span>Thông báo thay đổi</span>
+            </a>
+            <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:text-white">
+                <i class="fa-solid fa-user"></i><span>Thông tin tài khoản</span>
+            </a>
+        </div>
+        <div class="p-4 border-t border-slate-700">
+            <button onclick="dangXuat()" class="w-full flex items-center gap-3 px-4 py-3 text-red-400 hover:bg-red-900/30 rounded-xl">
+                <i class="fa-solid fa-right-from-bracket"></i><span>Đăng xuất</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="flex-1 p-8">
+        <div class="max-w-4xl mx-auto">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-3xl font-bold text-gray-800">Thông báo thay đổi chuyến bay</h2>
+                <a href="tracuuchuyenbay.html" class="text-gray-500 hover:text-gray-700">
+                    <i class="fa-solid fa-arrow-left"></i> Quay lại
+                </a>
+            </div>
+
+            <!-- Thông tin chuyến bay có thay đổi -->
+            <div class="bg-white rounded-2xl shadow-lg p-8 mb-6">
+                <h3 class="font-semibold text-lg mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-circle-info text-blue-600"></i>
+                    Thông tin chuyến bay
+                </h3>
+                
+                <div id="thongTinChuyenBay" class="bg-blue-50 p-6 rounded-xl">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <p class="text-sm text-gray-500 mb-1">Số hiệu chuyến bay</p>
+                            <p class="text-2xl font-bold text-blue-700" id="soHieu">VN132</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500 mb-1">Hãng bay</p>
+                            <p class="text-lg font-semibold" id="hangBay">Vietnam Airlines</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500 mb-1">Trạng thái cũ</p>
+                            <p class="text-lg text-gray-600" id="trangThaiCu">Đúng giờ</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500 mb-1">Trạng thái mới</p>
+                            <p class="text-lg font-bold text-red-600" id="trangThaiMoi">Chậm (Delay)</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Soạn thảo nội dung thông báo -->
+            <div class="bg-white rounded-2xl shadow-lg p-8 mb-6">
+                <h3 class="font-semibold text-lg mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-pen-to-square text-blue-600"></i>
+                    Nội dung thông báo
+                </h3>
+
+                <div class="space-y-4">
+                    <!-- Mẫu thông báo -->
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Chọn mẫu thông báo</label>
+                        <select id="mauTB" onchange="chonMau()" class="w-full p-3 border border-gray-300 rounded-xl bg-white">
+                            <option value="">-- Chọn mẫu --</option>
+                            <option value="delay">Thông báo chậm chuyến</option>
+                            <option value="boarding">Thông báo đang boarding</option>
+                            <option value="huy">Thông báo hủy chuyến</option>
+                            <option value="doi">Thông báo đổi giờ</option>
+                        </select>
+                    </div>
+
+                    <!-- Nội dung -->
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Nội dung</label>
+                        <textarea id="noiDung" rows="5" class="w-full p-4 border border-gray-300 rounded-xl bg-white" 
+placeholder="Nhập nội dung thông báo..."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Phương thức gửi -->
+            <div class="bg-white rounded-2xl shadow-lg p-8 mb-6">
+                <h3 class="font-semibold text-lg mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-paper-plane text-blue-600"></i>
+                    Phương thức gửi
+                </h3>
+
+                <div class="flex gap-4">
+                    <label class="flex items-center gap-3 p-4 border rounded-xl cursor-pointer hover:bg-gray-50">
+                        <input type="checkbox" id="guiSMS" class="w-5 h-5 text-blue-600">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-comment-sms text-green-600"></i>
+                            <span class="font-medium">SMS</span>
+                        </div>
+                    </label>
+                    
+                    <label class="flex items-center gap-3 p-4 border rounded-xl cursor-pointer hover:bg-gray-50">
+                        <input type="checkbox" id="guiEmail" class="w-5 h-5 text-blue-600">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-envelope text-red-600"></i>
+                            <span class="font-medium">Email</span>
+                        </div>
+                    </label>
+                    
+                    <label class="flex items-center gap-3 p-4 border rounded-xl cursor-pointer hover:bg-gray-50">
+                        <input type="checkbox" id="guiPush" class="w-5 h-5 text-blue-600">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-bell text-orange-600"></i>
+                            <span class="font-medium">Push Notification</span>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Nút chức năng -->
+            <div class="flex justify-end gap-4">
+                <button onclick="huyBo()" class="px-8 py-3 border border-gray-300 rounded-xl hover:bg-gray-100">
+                    Không gửi
+                </button>
+                <button onclick="guiThongBao()" class="bg-blue-600 hover:bg-blue-700 text-white px-10 py-3 rounded-xl font-medium">
+                    <i class="fa-solid fa-paper-plane"></i> Gửi thông báo
+                </button>
+            </div>
+
+            <!-- Log gửi thông báo -->
+            <div id="logGui" class="mt-8 hidden">
+                <div class="bg-gray-100 rounded-xl p-4">
+                    <h4 class="font-semibold mb-2">Lịch sử gửi thông báo</h4>
+                    <div id="logContent" class="space-y-2 text-sm"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // Lấy dữ liệu từ localStorage
+    function getUrlParameter(name) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(name);
+    }
+
+    function loadThongTin() {
+        const ma = getUrlParameter('ma');
+        
+        // Đọc dữ liệu từ localStorage (thông tin chuyến bay đã cập nhật)
+        const duLieuCapNhat = JSON.parse(localStorage.getItem('danhSachCapNhat')) || [];
+        const chuyen = duLieuCapNhat.find(cb => cb.soHieu === ma);
+
+        if (chuyen) {
+            document.getElementById('soHieu').textContent = chuyen.soHieu;
+            document.getElementById('hangBay').textContent = chuyen.hangBay;
+            document.getElementById('trangThaiMoi').textContent = chuyen.trangThai;
+            document.getElementById('noiDung').value = generateNoiDung(chuyen);
+        }
+    }
+
+    // Tự động sinh nội dung theo trạng thái
+    function generateNoiDung(chuyen) {
+        const tenTT = {
+            'ON_TIME': 'Đúng giờ',
+            'DELAYED': 'Chậm (Delay)',
+            'BOARDING': 'Đang boarding',
+            'DEPARTED': 'Đã khởi hành',
+            'ARRIVED': 'Đã hạ cánh',
+            'CANCELLED': 'Hủy chuyến'
+        };
+
+        let noiDung = `Kính gửi hành khách của chuyến bay ${chuyen.soHieu},\n\n`;
+        
+        if (chuyen.trangThai === 'DELAYED') {
+            noiDung += `Chuyến bay ${chuyen.soHieu} ngày ${chuyen.ngay} có thay đổi: Chậm ${chuyen.lyDo ? '- ' + chuyen.lyDo : ''}\n`;
+            noiDung += `Giờ khởi hành dự kiến: ${chuyen.gioDuKienKhoiHanh}\n`;
+            noiDung += `Giờ khởi hành mới: ${chuyen.gioThucTeKhoiHanh || 'Chưa xác định'}\n`;
+        } else if (chuyen.trangThai === 'CANCELLED') {
+            noiDung += `Chuyến bay ${chuyen.soHieu} ngày ${chuyen.ngay} đã bị HỦY.\n`;
+            noiDung += `Lý do: ${chuyen.lyDo || 'Không xác định'}\n`;
+        } else {
+            noiDung += `Chuyến bay ${chuyen.soHieu} ngày ${chuyen.ngay} có thay đổi trạng thái: ${tenTT[chuyen.trangThai] || chuyen.trangThai}\n`;
+        }
+        
+        noiDung += `\nCảm ơn quý hành khách đã tin tưởng Vietnam Airlines.\nTrân trọng!`;
+        
+        return noiDung;
+    }
+
+    // Chọn mẫu thông báo
+    function chonMau() {
+        const mau = document.getElementById('mauTB').value;
+        const ma = getUrlParameter('ma');
+        
+        // Đọc dữ liệu chuyến bay
+        const duLieuCapNhat = JSON.parse(localStorage.getItem('danhSachCapNhat')) || [];
+        const chuyen = duLieuCapNhat.find(cb => cb.soHieu === ma);
+
+        const mauNoiDung = {
+            'delay': `Kính gửi hành khách, chuyến bay ${chuyen?.soHieu} sẽ khởi hành muộn. Vui lòng có mặt tại cổng ${chuyen?.cong} đúng giờ. Cảm ơn!`,
+            'boarding': `Chuyến bay ${chuyen?.soHieu} đang mở cửa boarding. Hành khách vui lòng di chuyển đến cổng ${chuyen?.cong}.`,
+            'huy': `Rất tiếc, chuyến bay ${chuyen?.soHieu} ngày ${chuyen?.ngay} đã bị hủy. Vui lòng liên hệ quầy để được hỗ trợ.`,
+            'doi': `Chuyến bay ${chuyen?.soHieu} ngày ${chuyen?.ngay} có thay đổi giờ khởi hành. Vui lòng kiểm tra lịch trình mới.`
+        };
+
+        if (mau && mauNoiDung[mau]) {
+            document.getElementById('noiDung').value = mauNoiDung[mau];
+        }
+    }
+    // Gửi thông báo
+    function guiThongBao() {
+        const noiDung = document.getElementById('noiDung').value.trim();
+        const guiSMS = document.getElementById('guiSMS').checked;
+        const guiEmail = document.getElementById('guiEmail').checked;
+        const guiPush = document.getElementById('guiPush').checked;
+
+        // Validate
+        if (!noiDung) {
+            alert("Vui lòng nhập nội dung thông báo!");
+            return;
+        }
+
+        if (!guiSMS && !guiEmail && !guiPush) {
+            alert("Vui lòng chọn ít nhất một phương thức gửi!");
+            return;
+        }
+
+        // Mô phỏng gửi thông báo (thành công)
+        const loaiGui = [];
+        if (guiSMS) loaiGui.push("SMS");
+        if (guiEmail) loaiGui.push("Email");
+        if (guiPush) loaiGui.push("Push Notification");
+
+        // Hiển thị thành công
+        alert("✅ Đã gửi thông báo thành công qua: " + loaiGui.join(", "));
+
+        // Ghi log
+        const ma = getUrlParameter('ma');
+        const now = new Date();
+        const logEntry = {
+            maChuyenBay: ma,
+            noiDung: noiDung,
+            phuongThuc: loaiGui.join(", "),
+            thoiGian: now.toLocaleString('vi-VN'),
+            trangThai: "Thành công"
+        };
+
+        // Lưu log vào localStorage
+        let lichSuGui = JSON.parse(localStorage.getItem('lichSuGuiThongBao')) || [];
+        lichSuGui.push(logEntry);
+        localStorage.setItem('lichSuGuiThongBao', JSON.stringify(lichSuGui));
+
+        // Hiển thị log
+        hienThiLog();
+    }
+
+    // Hiển thị log
+    function hienThiLog() {
+        const lichSuGui = JSON.parse(localStorage.getItem('lichSuGuiThongBao')) || [];
+        
+        if (lichSuGui.length === 0) {
+            document.getElementById('logGui').classList.add('hidden');
+            return;
+        }
+
+        document.getElementById('logGui').classList.remove('hidden');
+        
+        let html = '';
+        lichSuGui.slice().reverse().forEach(log => {
+            html += `
+                <div class="bg-white p-3 rounded-lg border">
+                    <p class="font-medium">Chuyến bay: ${log.maChuyenBay}</p>
+                    <p class="text-sm text-gray-600">Nội dung: ${log.noiDung.substring(0, 50)}...</p>
+                    <p class="text-sm text-gray-500">Gửi qua: ${log.phuongThuc}</p>
+                    <p class="text-xs text-gray-400">${log.thoiGian} - ${log.trangThai}</p>
+                </div>
+            `;
+        });
+
+        document.getElementById('logContent').innerHTML = html;
+    }
+
+    // Hủy bỏ
+    function huyBo() {
+        if (confirm("Bạn có chắc muốn hủy gửi thông báo?")) {
+            window.location.href = "tracuuchuyenbay.html";
+        }
+    }
+
+    // Đăng xuất
+    function dangXuat() {
+        if (confirm("Bạn có chắc muốn đăng xuất?")) {
+            window.location.href = "dangnhap.html";
+        }
+    }
+
+    // Load khi trang được mở
+    window.onload = () => {
+        loadThongTin();
+        hienThiLog();
+    };
+    </script>
+</body>
+</html>

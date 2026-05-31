@@ -186,7 +186,7 @@ public class DieuPhoiVanHanhService {
     }
 
     public List<String> layTrangThaiChuyenBay() {
-        return List.of("Đã lên lịch", "Đang làm thủ tục", "Đang bay", "Chậm chuyến", "Hủy chuyến", "Hoàn thành");
+        return List.of("Đã lên lịch", "Đang làm thủ tục", "Đang bay", "Đã hạ cánh", "Chậm chuyến", "Hủy chuyến", "Hoàn thành");
     }
 
     private void validateLichTrinhTonTai(String maLichTrinh) {

@@ -1,6 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { loadCustomerFlights, statusOptions } from "../../data/customerData.js";
+import { layDanhSachChuyenBayKhachHang } from "../../api/customerApi.js";
+import { statusOptions } from "../../data/customerData.js";
 import CustomerFlightTable from "./CustomerFlightTable.jsx";
 import "../../styles/customer/CustomerPages.css";
 
@@ -8,21 +9,37 @@ function CustomerDeparturesPage() {
   const navigate = useNavigate();
   const [keyword, setKeyword] = useState("");
   const [status, setStatus] = useState("ALL");
-  const flights = loadCustomerFlights().filter((item) => item.type === "DI");
+  const [date, setDate] = useState("");
+  const [flights, setFlights] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const filteredFlights = useMemo(() => {
-    const search = keyword.toLowerCase().trim();
-    return flights.filter((flight) => {
-      const matchKeyword =
-        !search ||
-        [flight.flightNo, flight.airline, flight.from, flight.to]
-          .join(" ")
-          .toLowerCase()
-          .includes(search);
-      const matchStatus = status === "ALL" || flight.status === status;
-      return matchKeyword && matchStatus;
-    });
-  }, [keyword, status, flights]);
+  useEffect(() => {
+    let ignore = false;
+
+    async function loadFlights() {
+      try {
+        setLoading(true);
+        setError("");
+        const data = await layDanhSachChuyenBayKhachHang({
+          keyword,
+          type: "DI",
+          status,
+          date,
+        });
+        if (!ignore) setFlights(data || []);
+      } catch (err) {
+        if (!ignore) setError(err.message || "Không thể tải chuyến bay đi.");
+      } finally {
+        if (!ignore) setLoading(false);
+      }
+    }
+
+    loadFlights();
+    return () => {
+      ignore = true;
+    };
+  }, [keyword, status, date]);
 
   return (
     <div className="customer-page">
@@ -54,20 +71,29 @@ function CustomerDeparturesPage() {
         <input
           className="customer-input"
           type="date"
-          defaultValue="2026-05-01"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
         />
         <button
           className="customer-btn customer-btn--secondary"
           onClick={() => {
             setKeyword("");
             setStatus("ALL");
+            setDate("");
           }}
         >
           Làm mới
         </button>
       </div>
 
-      <CustomerFlightTable flights={filteredFlights} onNavigate={(page, id) => navigate(`/customer/${page === 'customerDetail' ? `flights/${id}` : page === 'customerArrivals' ? 'arrivals' : page === 'customerDepartures' ? 'departures' : page === 'customerSearch' ? 'search' : ''}`)} />
+      {loading ? <div className="customer-empty">Đang tải dữ liệu...</div> : null}
+      {error ? <div className="customer-empty">{error}</div> : null}
+      {!loading && !error ? (
+        <CustomerFlightTable
+          flights={flights}
+          onViewDetail={(id) => navigate(`/customer/flights/${id}`)}
+        />
+      ) : null}
     </div>
   );
 }

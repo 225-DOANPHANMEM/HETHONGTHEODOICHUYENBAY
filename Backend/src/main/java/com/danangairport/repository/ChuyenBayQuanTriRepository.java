@@ -16,8 +16,10 @@ import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Repository
@@ -420,6 +422,90 @@ public class ChuyenBayQuanTriRepository {
                 toTimestamp(request.gioThucTeKhoiHanh()),
                 toTimestamp(request.gioThucTeHaCanh()),
                 trimToNull(request.lyDoChamHoacHuy()));
+        dongBoTinhHinhLichTrinh(maLichTrinh, request);
+    }
+
+    private void dongBoTinhHinhLichTrinh(String maLichTrinh, CapNhatTinhHinhChuyenBayRequest request) {
+        String trangThaiMoi = request.trangThaiMoi().trim();
+        Integer soPhutCham = tinhSoPhutCham(maLichTrinh, request);
+        String lyDoChamHoacHuy = laTrangThaiCanLyDo(trangThaiMoi) ? trimToNull(request.lyDoChamHoacHuy()) : null;
+
+        jdbcTemplate.update("""
+                UPDATE LICHTRINH
+                SET TrangThaiHienTai = ?,
+                    GioUocTinhKhoiHanh = COALESCE(?, GioUocTinhKhoiHanh),
+                    GioUocTinhHaCanh = COALESCE(?, GioUocTinhHaCanh),
+                    GioThucTeKhoiHanh = COALESCE(?, GioThucTeKhoiHanh),
+                    GioThucTeHaCanh = COALESCE(?, GioThucTeHaCanh),
+                    LyDoChamHoacHuy = ?,
+                    SoPhutCham = ?
+                WHERE MaLichTrinh = ?
+                """,
+                trangThaiMoi,
+                toTimestamp(request.gioUocTinhKhoiHanh()),
+                toTimestamp(request.gioUocTinhHaCanh()),
+                toTimestamp(request.gioThucTeKhoiHanh()),
+                toTimestamp(request.gioThucTeHaCanh()),
+                lyDoChamHoacHuy,
+                soPhutCham,
+                maLichTrinh);
+
+        jdbcTemplate.update("""
+                WITH LichSuMoiNhat AS (
+                    SELECT TOP 1 TrangThaiMoi, SoPhutChamMoi, LyDoCapNhat
+                    FROM LICHSUCAPNHAT
+                    WHERE MaLichTrinh = ?
+                    ORDER BY ThoiGianCapNhat DESC
+                )
+                UPDATE LichSuMoiNhat
+                SET TrangThaiMoi = ?,
+                    SoPhutChamMoi = ?,
+                    LyDoCapNhat = COALESCE(?, LyDoCapNhat)
+                """,
+                maLichTrinh,
+                trangThaiMoi,
+                soPhutCham,
+                lyDoChamHoacHuy);
+    }
+
+    private Integer tinhSoPhutCham(String maLichTrinh, CapNhatTinhHinhChuyenBayRequest request) {
+        String trangThaiMoi = request.trangThaiMoi().trim();
+        if ("Hủy chuyến".equals(trangThaiMoi)) {
+            return 0;
+        }
+
+        Map<String, Object> row = jdbcTemplate.queryForMap("""
+                SELECT
+                    cb.LoaiChuyenBay,
+                    lt.GioDuKienKhoiHanh,
+                    lt.GioDuKienHaCanh,
+                    lt.GioUocTinhKhoiHanh,
+                    lt.GioUocTinhHaCanh
+                FROM LICHTRINH lt
+                JOIN CHUYENBAY cb ON lt.MaChuyenBay = cb.MaChuyenBay
+                WHERE lt.MaLichTrinh = ?
+                """, maLichTrinh);
+
+        boolean chuyenBayDen = "Đến".equals(row.get("LoaiChuyenBay"));
+        LocalDateTime gioDuKien = toLocalDateTime(row.get(chuyenBayDen ? "GioDuKienHaCanh" : "GioDuKienKhoiHanh"));
+        LocalDateTime gioUocTinh = chuyenBayDen ? request.gioUocTinhHaCanh() : request.gioUocTinhKhoiHanh();
+        if (gioUocTinh == null) {
+            gioUocTinh = toLocalDateTime(row.get(chuyenBayDen ? "GioUocTinhHaCanh" : "GioUocTinhKhoiHanh"));
+        }
+
+        if (gioDuKien == null || gioUocTinh == null) {
+            return 0;
+        }
+
+        long soPhut = ChronoUnit.MINUTES.between(gioDuKien, gioUocTinh);
+        if (soPhut <= 0) {
+            return 0;
+        }
+        return soPhut > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) soPhut;
+    }
+
+    private boolean laTrangThaiCanLyDo(String trangThai) {
+        return "Chậm chuyến".equals(trangThai) || "Hủy chuyến".equals(trangThai);
     }
 
     public void xoaMemLichTrinh(String maLichTrinh, String lyDoXoa) {
@@ -573,6 +659,16 @@ public class ChuyenBayQuanTriRepository {
 
     private Timestamp toTimestamp(LocalDateTime value) {
         return value == null ? null : Timestamp.valueOf(value);
+    }
+
+    private LocalDateTime toLocalDateTime(Object value) {
+        if (value instanceof Timestamp timestamp) {
+            return timestamp.toLocalDateTime();
+        }
+        if (value instanceof LocalDateTime localDateTime) {
+            return localDateTime;
+        }
+        return null;
     }
 
     private Integer toInteger(Object value) {

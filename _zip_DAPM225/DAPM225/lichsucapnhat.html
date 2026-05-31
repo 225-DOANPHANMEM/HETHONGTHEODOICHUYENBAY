@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lịch sử cập nhật chuyến bay</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <style>
+        .sidebar { background: linear-gradient(180deg, #1e2937 0%, #0f172a 100%); }
+    </style>
+</head>
+<body class="min-h-screen flex font-sans bg-gray-50">
+
+    <!-- Sidebar -->
+    <div class="sidebar w-72 text-white flex flex-col">
+        <div class="p-6 border-b border-slate-700">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-plane text-4xl text-blue-400"></i>
+                <div>
+                    <h1 class="text-2xl font-bold">DANANG</h1>
+                    <p class="text-blue-300 text-sm">International Airport</p>
+                </div>
+            </div>
+        </div>
+        <div class="flex-1 p-4 space-y-1">
+            <a href="tracuuchuyenbay.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-700">
+                <i class="fa-solid fa-magnifying-glass"></i><span>Quản lý chuyến bay</span>
+            </a>
+            <a href="thongbao.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-700">
+                <i class="fa-solid fa-bell"></i><span>Thông báo thay đổi</span>
+            </a>
+            <a href="lichsucapnhat.html" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-700">
+                <i class="fa-solid fa-clock-rotate-left"></i><span>Lịch sử cập nhật</span>
+            </a>
+            <a href="thongtintaikhoan.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:text-white">
+                <i class="fa-solid fa-user"></i><span>Thông tin tài khoản</span>
+            </a>
+        </div>
+        <div class="p-4 border-t border-slate-700">
+            <button onclick="dangXuat()" class="w-full flex items-center gap-3 px-4 py-3 text-red-400 hover:bg-red-900/30 rounded-xl">
+                <i class="fa-solid fa-right-from-bracket"></i><span>Đăng xuất</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="flex-1 p-8">
+        <div class="max-w-6xl mx-auto">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-3xl font-bold text-gray-800">Lịch sử cập nhật chuyến bay</h2>
+                <a href="tracuuchuyenbay.html" class="text-gray-500 hover:text-gray-700">
+                    <i class="fa-solid fa-arrow-left"></i> Quay lại
+                </a>
+            </div>
+
+            <!-- Form tìm kiếm -->
+            <div class="bg-white rounded-2xl shadow-lg p-8 mb-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Số hiệu chuyến bay</label>
+                        <input type="text" id="maChuyenBay" 
+                               class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:border-blue-600"
+                               placeholder="Nhập mã chuyến bay (VD: VN132)">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Ngày cập nhật</label>
+                        <input type="date" id="ngayCapNhat" 
+                               class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:border-blue-600">
+                    </div>
+                    <div class="flex items-end">
+                        <button onclick="timKiemLichSu()" 
+                                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            TÌM KIẾM
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kết quả -->
+            <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+                <div class="px-6 py-4 bg-gray-100 border-b flex justify-between items-center">
+                    <h3 class="font-semibold text-gray-700">Kết quả tìm kiếm</h3>
+                    <span id="soLuong" class="text-sm text-gray-500"></span>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-4 text-left text-sm font-medium text-gray-500">STT</th>
+                                <th class="px-6 py-4 text-left text-sm font-medium text-gray-500">Thời gian</th>
+                                <th class="px-6 py-4 text-left text-sm font-medium text-gray-500">Số hiệu</th>
+                                <th class="px-6 py-4 text-left text-sm font-medium text-gray-500">Người cập nhật</th>
+                                <th class="px-6 py-4 text-left text-sm font-medium text-gray-500">Trạng thái cũ</th>
+                                <th class="px-6 py-4 text-left text-sm font-medium text-gray-500">Trạng thái mới</th>
+                                <th class="px-6 py-4 text-left text-sm font-medium text-gray-500">Nội dung thay đổi</th>
+                                <th class="px-6 py-4 text-center text-sm font-medium text-gray-500">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="danhSachLichSu" class="divide-y">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Modal chi tiết -->
+            <div id="modalChiTiet" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+                    <div class="p-6 border-b flex justify-between items-center">
+                        <h3 class="text-xl font-bold">Chi tiết lịch sử cập nhật</h3>
+                        <button onclick="dongModal()" class="text-gray-500 hover:text-gray-700">
+                            <i class="fa-solid fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    <div id="noiDungChiTiet" class="p-6 space-y-4">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // Dữ liệu mẫu lịch sử cập nhật
+    const demoLichSu = [
+        {
+            id: 1,
+            maChuyenBay: "VN132",
+            tenDangNhap: "nv001",
+            tenNhanVien: "Nguyễn Văn A",
+            thoiGian: "2026-05-19 14:35:00",
+            trangThaiCu: "Đúng giờ",
+            trangThaiMoi: "Chậm (Delay)",
+            noiDungThayDoi: "Chuyến bay VN132 khởi hành muộn 30 phút do thời tiết xấu.",
+            lyDo: "Thời tiết xấu",
+            gioCu: "14:30",
+            gioMoi: "15:00",
+            congCu: "C12",
+            congMoi: "C15"
+        },
+        {
+            id: 2,
+            maChuyenBay: "VN132",
+            tenDangNhap: "nv001",
+            tenNhanVien: "Nguyễn Văn A",
+            thoiGian: "2026-05-19 15:05:00",
+            trangThaiCu: "Chậm (Delay)",
+            trangThaiMoi: "Đang boarding",
+            noiDungThayDoi: "Chuyến bay VN132 bắt đầu boarding.",
+            lyDo: "",
+            gioCu: "15:00",
+            gioMoi: "15:10",
+            congCu: "C15",
+            congMoi: "C15"
+        },
+        {
+            id: 3,
+            maChuyenBay: "VJ456",
+            tenDangNhap: "nv002",
+            tenNhanVien: "Trần Thị B",
+            thoiGian: "2026-05-19 16:50:00",
+            trangThaiCu: "Đúng giờ",
+            trangThaiMoi: "Hủy chuyến",
+            noiDungThayDoi: "Chuyến bay VJ456 bị hủy do máy bay gặp kỹ thuật.",
+            lyDo: "Máy bay gặp sự cố kỹ thuật",
+            gioCu: "16:45",
+            gioMoi: "",
+            congCu: "A05",
+            congMoi: ""
+        }
+    ];
+
+    function getUrlParameter(name) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(name);
+    }
+
+    function timKiemLichSu() {
+        const maChuyenBay = document.getElementById('maChuyenBay').value.trim().toUpperCase();
+        const ngayCapNhat = document.getElementById('ngayCapNhat').value;
+
+        // Đọc dữ liệu từ localStorage (lịch sử cập nhật đã lưu)
+        const lichSuDaLuu = JSON.parse(localStorage.getItem('lichSuCapNhat')) || [];
+        
+        // Kết hợp dữ liệu mẫu và dữ liệu đã lưu
+        let danhSach = [...demoLichSu, ...lichSuDaLuu];
+
+        // Lọc theo mã chuyến bay
+        if (maChuyenBay) {
+            danhSach = danhSach.filter(item => 
+                item.maChuyenBay.toUpperCase() === maChuyenBay
+            );
+        }
+
+        // Lọc theo ngày
+        if (ngayCapNhat) {
+            danhSach = danhSach.filter(item => 
+                item.thoiGian.startsWith(ngayCapNhat)
+            );
+        }
+
+        // Kiểm tra không tồn tại
+        if (maChuyenBay && danhSach.length === 0) {
+            alert("⚠️ Không tìm thấy chuyến bay!");
+            return;
+        }
+
+        // Sắp xếp theo thời gian (mới nhất trước)
+        danhSach.sort((a, b) => new Date(b.thoiGian) - new Date(a.thoiGian));
+
+        hienThiDanhSach(danhSach);
+    }
+
+    function hienThiDanhSach(danhSach) {
+        const tbody = document.getElementById('danhSachLichSu');
+        
+        if (danhSach.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="8" class="px-6 py-16 text-center text-gray-500">
+                        <i class="fa-solid fa-clock-rotate-left text-5xl mb-4 opacity-30"></i>
+                        <p class="text-xl">Chưa có cập nhật nào</p>
+                    </td>
+                </tr>`;
+            document.getElementById('soLuong').textContent = "0 bản ghi";
+            return;
+        }
+
+        let html = '';
+        danhSach.forEach((item, index) => {
+            // Xử lý màu sắc trạng thái
+            let mauMoi = '';
+            switch(item.trangThaiMoi) {
+                case 'Chậm (Delay)': mauMoi = 'text-red-600 bg-red-100'; break;
+                case 'Đang boarding': mauMoi = 'text-blue-600 bg-blue-100'; break;
+                case 'Đúng giờ': mauMoi = 'text-green-600 bg-green-100'; break;
+                case 'Hủy chuyến': mauMoi = 'text-gray-600 bg-gray-100'; break;
+                default: mauMoi = 'text-gray-600 bg-gray-100';
+            }
+
+            html += `
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4">${index + 1}</td>
+                    <td class="px-6 py-4 font-mono text-sm">${item.thoiGian}</td>
+                    <td class="px-6 py-4 font-bold">${item.maChuyenBay}</td>
+                    <td class="px-6 py-4">${item.tenNhanVien}</td>
+                    <td class="px-6 py-4 text-gray-500">${item.trangThaiCu}</td>
+                    <td class="px-6 py-4">
+                        <span class="px-3 py-1 rounded-full text-xs font-medium ${mauMoi}">
+                            ${item.trangThaiMoi}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-600 max-w-xs truncate">
+                        ${item.noiDungThayDoi}
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        <button onclick="xemChiTiet(${item.id})" 
+                                class="text-blue-600 hover:text-blue-800 font-medium">
+                            <i class="fa-solid fa-eye"></i> Xem
+                        </button>
+                    </td>
+                </tr>`;
+        });
+
+        tbody.innerHTML = html;
+        document.getElementById('soLuong').textContent = `${danhSach.length} bản ghi`;
+    }
+
+        function xemChiTiet(id) {
+        const lichSuDaLuu = JSON.parse(localStorage.getItem('lichSuCapNhat')) || [];
+        const danhSach = [...demoLichSu, ...lichSuDaLuu];
+        const item = danhSach.find(x => x.id === id);
+
+        if (!item) {
+            alert("Không tìm thấy bản ghi!");
+            return;
+        }
+
+        const html = `
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <p class="text-sm text-gray-500">Số hiệu chuyến bay</p>
+                    <p class="text-lg font-bold">${item.maChuyenBay}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Thời gian cập nhật</p>
+                    <p class="text-lg font-mono">${item.thoiGian}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Người cập nhật</p>
+                    <p class="text-lg">${item.tenNhanVien}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Tên đăng nhập</p>
+                    <p class="text-lg font-mono">${item.tenDangNhap}</p>
+                </div>
+            </div>
+
+            <div class="border-t pt-4 mt-4">
+                <p class="text-sm text-gray-500 mb-2">Chi tiết thay đổi</p>
+                <div class="bg-gray-50 p-4 rounded-xl space-y-3">
+                    <p><strong>Trạng thái cũ:</strong> ${item.trangThaiCu}</p>
+                    <p><strong>Trạng thái mới:</strong> ${item.trangThaiMoi}</p>
+                    <p><strong>Giờ khởi hành:</strong> ${item.gioCu} → ${item.gioMoi}</p>
+                    <p><strong>Cổng máy bay:</strong> ${item.congCu} → ${item.congMoi}</p>
+                    ${item.lyDo ? `<p><strong>Lý do:</strong> ${item.lyDo}</p>` : ''}
+                </div>
+            </div>
+
+            <div class="border-t pt-4 mt-4">
+                <p class="text-sm text-gray-500 mb-2">Nội dung thay đổi</p>
+                <div class="bg-blue-50 p-4 rounded-xl">
+                    <p>${item.noiDungThayDoi}</p>
+                </div>
+            </div>
+        `;
+
+        document.getElementById('noiDungChiTiet').innerHTML = html;
+        document.getElementById('modalChiTiet').classList.remove('hidden');
+    }
+
+    function dongModal() {
+        document.getElementById('modalChiTiet').classList.add('hidden');
+    }
+
+    // Đóng modal khi click bên ngoài
+    document.getElementById('modalChiTiet').addEventListener('click', function(e) {
+        if (e.target === this) {
+            dongModal();
+        }
+    });
+
+    function dangXuat() {
+        if (confirm("Bạn có chắc muốn đăng xuất?")) {
+            window.location.href = "dangnhap.html";
+        }
+    }
+
+    // Load dữ liệu mặc định khi mở trang
+    window.onload = () => {
+        // Hiển thị tất cả lịch sử
+        timKiemLichSu();
+    };
+    </script>
+</body>
+</html>
