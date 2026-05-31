@@ -1,1097 +1,859 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import AdminLayout from "../../layouts/AdminLayout.jsx";
+import {
+  capNhatChuyenBay,
+  layChiTietChuyenBay,
+  layDanhSachChuyenBay,
+  layHangHangKhongOptions,
+  layLichSuChuyenBay,
+  layLoaiChuyenBay,
+  layThongKeChuyenBay,
+  layTrangThaiChuyenBay,
+  luuTruChuyenBay,
+  themChuyenBay,
+} from "../../api/chuyenBayApi.js";
 import "../../styles/admin/FlightManagementPage.css";
 
-const FLIGHT_STATUSES = [
-  "Đã lên lịch",
-  "Đang làm thủ tục",
-  "Đang bay",
-  "Đã hạ cánh",
-  "Hoàn thành",
-  "Chậm chuyến",
-  "Hủy chuyến",
-  "Đã xóa",
+const EMPTY_FILTERS = {
+  keyword: "",
+  type: "",
+  status: "",
+  airline: "",
+  date: "",
+  terminal: "",
+  gate: "",
+  includeArchived: false,
+};
+
+const MAIN_STAT_CARDS = [
+  { key: "tongLichTrinh", label: "Tổng chuyến bay", icon: "fa-solid fa-plane", tone: "blue" },
+  { key: "soChuyenBayDen", label: "Chuyến bay đến", icon: "fa-solid fa-plane-arrival", tone: "teal" },
+  { key: "soChuyenBayDi", label: "Chuyến bay đi", icon: "fa-solid fa-plane-departure", tone: "indigo" },
+  { key: "soDangKhaiThac", label: "Đang khai thác", icon: "fa-solid fa-route", tone: "cyan" },
+  { key: "soChamHuy", label: "Chậm/Hủy", icon: "fa-solid fa-triangle-exclamation", tone: "amber" },
+  { key: "soHoanThanh", label: "Hoàn thành", icon: "fa-solid fa-circle-check", tone: "green" },
 ];
 
-const initialAirlines = [
-  { id: "HHK01", code: "VN", name: "Vietnam Airlines" },
-  { id: "HHK02", code: "VJ", name: "Vietjet Air" },
-  { id: "HHK03", code: "QH", name: "Bamboo Airways" },
-  { id: "HHK04", code: "SQ", name: "Singapore Airlines" },
-  { id: "HHK05", code: "KE", name: "Korean Air" },
-];
-
-const initialFlights = [
-  {
-    id: "CB001",
-    airlineId: "HHK01",
-    flightNumber: "VN101",
-    type: "Đi",
-    departure: "Đà Nẵng",
-    destination: "Hà Nội",
-    deleted: false,
-  },
-  {
-    id: "CB002",
-    airlineId: "HHK02",
-    flightNumber: "VJ203",
-    type: "Đến",
-    departure: "TP.HCM",
-    destination: "Đà Nẵng",
-    deleted: false,
-  },
-  {
-    id: "CB003",
-    airlineId: "HHK03",
-    flightNumber: "QH305",
-    type: "Đi",
-    departure: "Đà Nẵng",
-    destination: "Singapore",
-    deleted: false,
-  },
-  {
-    id: "CB004",
-    airlineId: "HHK04",
-    flightNumber: "SQ171",
-    type: "Đến",
-    departure: "Singapore",
-    destination: "Đà Nẵng",
-    deleted: false,
-  },
-  {
-    id: "CB005",
-    airlineId: "HHK05",
-    flightNumber: "KE462",
-    type: "Đi",
-    departure: "Đà Nẵng",
-    destination: "Seoul",
-    deleted: false,
-  },
-];
-
-const initialSchedules = [
-  {
-    id: "LT001",
-    flightId: "CB001",
-    flightDate: "2026-05-01",
-    scheduledDeparture: "2026-05-01T06:00",
-    scheduledArrival: "2026-05-01T07:20",
-    estimatedDeparture: "2026-05-01T06:00",
-    estimatedArrival: "2026-05-01T07:20",
-    actualDeparture: "",
-    actualArrival: "",
-    status: "Đã lên lịch",
-    delayMinutes: 0,
-    reason: "Khởi tạo lịch trình ban đầu",
-  },
-  {
-    id: "LT002",
-    flightId: "CB002",
-    flightDate: "2026-05-01",
-    scheduledDeparture: "2026-05-01T08:00",
-    scheduledArrival: "2026-05-01T09:15",
-    estimatedDeparture: "2026-05-01T08:00",
-    estimatedArrival: "2026-05-01T09:15",
-    actualDeparture: "",
-    actualArrival: "",
-    status: "Đã lên lịch",
-    delayMinutes: 0,
-    reason: "Khởi tạo lịch trình ban đầu",
-  },
-  {
-    id: "LT003",
-    flightId: "CB003",
-    flightDate: "2026-05-01",
-    scheduledDeparture: "2026-05-01T10:30",
-    scheduledArrival: "2026-05-01T13:15",
-    estimatedDeparture: "2026-05-01T10:30",
-    estimatedArrival: "2026-05-01T13:15",
-    actualDeparture: "",
-    actualArrival: "",
-    status: "Đã lên lịch",
-    delayMinutes: 0,
-    reason: "Khởi tạo lịch trình ban đầu",
-  },
-  {
-    id: "LT004",
-    flightId: "CB004",
-    flightDate: "2026-05-01",
-    scheduledDeparture: "2026-05-01T14:00",
-    scheduledArrival: "2026-05-01T16:40",
-    estimatedDeparture: "2026-05-01T14:00",
-    estimatedArrival: "2026-05-01T16:40",
-    actualDeparture: "",
-    actualArrival: "",
-    status: "Đã lên lịch",
-    delayMinutes: 0,
-    reason: "Khởi tạo lịch trình ban đầu",
-  },
-  {
-    id: "LT005",
-    flightId: "CB005",
-    flightDate: "2026-05-01",
-    scheduledDeparture: "2026-05-01T18:00",
-    scheduledArrival: "2026-05-01T22:30",
-    estimatedDeparture: "2026-05-01T18:00",
-    estimatedArrival: "2026-05-01T22:30",
-    actualDeparture: "",
-    actualArrival: "",
-    status: "Đã lên lịch",
-    delayMinutes: 0,
-    reason: "Khởi tạo lịch trình ban đầu",
-  },
-];
-
-const initialGateAssignments = [
-  { id: "PCC01", scheduleId: "LT001", gateName: "Cổng 1" },
-  { id: "PCC02", scheduleId: "LT002", gateName: "Cổng 2" },
-  { id: "PCC03", scheduleId: "LT003", gateName: "Cổng 3" },
-  { id: "PCC04", scheduleId: "LT004", gateName: "Cổng 4" },
-  { id: "PCC05", scheduleId: "LT005", gateName: "Cổng 5" },
-];
-
-const initialBeltAssignments = [
-  { id: "PCBC01", scheduleId: "LT001", beltName: "Băng chuyền 1" },
-  { id: "PCBC02", scheduleId: "LT002", beltName: "Băng chuyền 2" },
-  { id: "PCBC03", scheduleId: "LT003", beltName: "Băng chuyền 3" },
-  { id: "PCBC04", scheduleId: "LT004", beltName: "Băng chuyền 4" },
-  { id: "PCBC05", scheduleId: "LT005", beltName: "Băng chuyền 5" },
-];
-
-const initialUpdateHistory = [
-  {
-    id: "LS01",
-    scheduleId: "LT001",
-    flightNumber: "VN101",
-    oldStatus: "Đã lên lịch",
-    newStatus: "Đã lên lịch",
-    oldEstimatedDeparture: "2026-05-01T06:00",
-    newEstimatedDeparture: "2026-05-01T06:00",
-    delayMinutes: 0,
-    reason: "Khởi tạo lịch trình ban đầu",
-    updatedAt: "01/05/2026 05:00",
-  },
-  {
-    id: "LS02",
-    scheduleId: "LT002",
-    flightNumber: "VJ203",
-    oldStatus: "Đã lên lịch",
-    newStatus: "Đã lên lịch",
-    oldEstimatedDeparture: "2026-05-01T08:00",
-    newEstimatedDeparture: "2026-05-01T08:00",
-    delayMinutes: 0,
-    reason: "Khởi tạo lịch trình ban đầu",
-    updatedAt: "01/05/2026 05:00",
-  },
-];
+const MAIN_STATUSES = ["Đã lên lịch", "Đang làm thủ tục", "Đang bay", "Chậm chuyến", "Hủy chuyến", "Hoàn thành"];
 
 function FlightManagementPage({ onNavigate }) {
-  const [flights, setFlights] = useState(initialFlights);
-  const [schedules, setSchedules] = useState(initialSchedules);
-  const [updateHistory, setUpdateHistory] = useState(initialUpdateHistory);
-  const [deletedHistory, setDeletedHistory] = useState([]);
-  const [selectedScheduleId, setSelectedScheduleId] = useState("LT001");
-  const [detailScheduleId, setDetailScheduleId] = useState(null);
+  const [filters, setFilters] = useState(EMPTY_FILTERS);
+  const [appliedFilters, setAppliedFilters] = useState(EMPTY_FILTERS);
+  const [rows, setRows] = useState([]);
+  const [statistics, setStatistics] = useState({});
+  const [airlines, setAirlines] = useState([]);
+  const [flightTypes, setFlightTypes] = useState([]);
+  const [statuses, setStatuses] = useState(MAIN_STATUSES);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [modal, setModal] = useState(null);
+  const [formData, setFormData] = useState({});
 
-  const [keyword, setKeyword] = useState("");
-  const [airlineFilter, setAirlineFilter] = useState("Tất cả");
-  const [typeFilter, setTypeFilter] = useState("Tất cả");
-  const [dateFilter, setDateFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("Tất cả");
+  const visibleStatuses = useMemo(() => {
+    const apiStatuses = statuses.filter((status) => status !== "Đã hạ cánh");
+    return apiStatuses.length ? apiStatuses : MAIN_STATUSES;
+  }, [statuses]);
 
-  const [updateForm, setUpdateForm] = useState({
-    status: "Đã lên lịch",
-    estimatedDeparture: "2026-05-01T06:00",
-    estimatedArrival: "2026-05-01T07:20",
-    actualDeparture: "",
-    actualArrival: "",
-    reason: "",
-  });
-
-  const airlineById = useMemo(() => {
-    return initialAirlines.reduce((result, airline) => {
-      result[airline.id] = airline;
-      return result;
-    }, {});
+  const loadCommonData = useCallback(async () => {
+    const [stats, airlineOptions, typeOptions, statusOptions] = await Promise.all([
+      layThongKeChuyenBay(),
+      layHangHangKhongOptions(),
+      layLoaiChuyenBay(),
+      layTrangThaiChuyenBay(),
+    ]);
+    setStatistics(stats || {});
+    setAirlines(Array.isArray(airlineOptions) ? airlineOptions : []);
+    setFlightTypes(Array.isArray(typeOptions) ? typeOptions : []);
+    setStatuses(Array.isArray(statusOptions) ? statusOptions : MAIN_STATUSES);
   }, []);
 
-  const gateByScheduleId = useMemo(() => {
-    return initialGateAssignments.reduce((result, item) => {
-      result[item.scheduleId] = item.gateName;
-      return result;
-    }, {});
-  }, []);
+  const loadRows = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await layDanhSachChuyenBay(appliedFilters);
+      setRows(Array.isArray(data) ? data : []);
+      setError("");
+    } catch (err) {
+      setRows([]);
+      setError(err.message || "Không tải được danh sách chuyến bay.");
+    } finally {
+      setLoading(false);
+    }
+  }, [appliedFilters]);
 
-  const beltByScheduleId = useMemo(() => {
-    return initialBeltAssignments.reduce((result, item) => {
-      result[item.scheduleId] = item.beltName;
-      return result;
-    }, {});
-  }, []);
+  useEffect(() => {
+    let cancelled = false;
 
-  const flightRows = useMemo(() => {
-    return schedules
-      .map((schedule) => {
-        const flight = flights.find((item) => item.id === schedule.flightId);
-
-        if (!flight || flight.deleted) {
-          return null;
+    async function loadInitialData() {
+      try {
+        await loadCommonData();
+      } catch (err) {
+        if (!cancelled) {
+          setError(err.message || "Không tải được dữ liệu chuyến bay.");
         }
+      }
+    }
 
-        return {
-          ...schedule,
-          flight,
-          airline: airlineById[flight.airlineId],
-          gateName: gateByScheduleId[schedule.id] || "Chưa phân công",
-          beltName: beltByScheduleId[schedule.id] || "Chưa phân công",
-        };
-      })
-      .filter(Boolean);
-  }, [flights, schedules, airlineById, gateByScheduleId, beltByScheduleId]);
-
-  const selectedRow = flightRows.find((row) => row.id === selectedScheduleId);
-  const detailRow = flightRows.find((row) => row.id === detailScheduleId);
-
-  const filteredRows = useMemo(() => {
-    const searchValue = keyword.trim().toLowerCase();
-
-    return flightRows.filter((row) => {
-      const matchesKeyword =
-        row.flight.flightNumber.toLowerCase().includes(searchValue) ||
-        row.airline?.name.toLowerCase().includes(searchValue) ||
-        row.flight.departure.toLowerCase().includes(searchValue) ||
-        row.flight.destination.toLowerCase().includes(searchValue) ||
-        row.gateName.toLowerCase().includes(searchValue) ||
-        row.beltName.toLowerCase().includes(searchValue);
-
-      const matchesAirline =
-        airlineFilter === "Tất cả" || row.flight.airlineId === airlineFilter;
-
-      const matchesType =
-        typeFilter === "Tất cả" || row.flight.type === typeFilter;
-
-      const matchesDate = !dateFilter || row.flightDate === dateFilter;
-
-      const matchesStatus =
-        statusFilter === "Tất cả" || row.status === statusFilter;
-
-      return (
-        matchesKeyword &&
-        matchesAirline &&
-        matchesType &&
-        matchesDate &&
-        matchesStatus
-      );
-    });
-  }, [
-    flightRows,
-    keyword,
-    airlineFilter,
-    typeFilter,
-    dateFilter,
-    statusFilter,
-  ]);
-
-  const stats = useMemo(() => {
-    return {
-      total: flightRows.length,
-      departure: flightRows.filter((row) => row.flight.type === "Đi").length,
-      arrival: flightRows.filter((row) => row.flight.type === "Đến").length,
-      delayedOrCancelled: flightRows.filter((row) =>
-        ["Chậm chuyến", "Hủy chuyến"].includes(row.status),
-      ).length,
+    loadInitialData();
+    return () => {
+      cancelled = true;
     };
-  }, [flightRows]);
+  }, [loadCommonData]);
 
-  const selectedHistory = useMemo(() => {
-    if (!detailRow) {
-      return [];
-    }
+  useEffect(() => {
+    loadRows();
+  }, [loadRows]);
 
-    return updateHistory.filter((item) => item.scheduleId === detailRow.id);
-  }, [detailRow, updateHistory]);
-
-  const formatDateTime = (value) => {
-    if (!value) {
-      return "Chưa cập nhật";
-    }
-
-    return value.replace("T", " ");
+  const reloadAll = async () => {
+    setError("");
+    setSuccess("");
+    await Promise.all([loadCommonData(), loadRows()]);
   };
 
-  const calculateDelayMinutes = (scheduledDeparture, estimatedDeparture) => {
-    if (!scheduledDeparture || !estimatedDeparture) {
-      return 0;
-    }
-
-    const scheduled = new Date(scheduledDeparture);
-    const estimated = new Date(estimatedDeparture);
-    const delay = Math.round((estimated - scheduled) / 60000);
-
-    return delay > 0 ? delay : 0;
+  const handleFilterChange = (event) => {
+    const { name, value, type, checked } = event.target;
+    setFilters((current) => ({ ...current, [name]: type === "checkbox" ? checked : value }));
   };
 
-  const handleSelectSchedule = (scheduleId) => {
-    const row = flightRows.find((item) => item.id === scheduleId);
-
-    if (!row) {
-      return;
-    }
-
-    setSelectedScheduleId(scheduleId);
-    setUpdateForm({
-      status: row.status,
-      estimatedDeparture: row.estimatedDeparture,
-      estimatedArrival: row.estimatedArrival,
-      actualDeparture: row.actualDeparture,
-      actualArrival: row.actualArrival,
-      reason: "",
-    });
+  const handleApplyFilters = () => {
+    setAppliedFilters(filters);
   };
 
-  const handleChangeUpdateForm = (event) => {
+  const handleResetFilters = () => {
+    setFilters(EMPTY_FILTERS);
+    setAppliedFilters(EMPTY_FILTERS);
+  };
+
+  const openCreateModal = () => {
+    setFormData(createEmptyFlightForm(airlines, flightTypes));
+    setModal({ type: "form", mode: "create", item: null });
+  };
+
+  const openEditModal = (item) => {
+    setFormData(mapFlightToForm(item));
+    setModal({ type: "form", mode: "edit", item });
+  };
+
+  const openDetailModal = async (item) => {
+    setSaving(true);
+    setError("");
+    try {
+      const detail = await layChiTietChuyenBay(item.maLichTrinh);
+      setModal({ type: "detail", detail });
+    } catch (err) {
+      setError(err.message || "Không tải được chi tiết chuyến bay.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const openHistoryModal = async (item) => {
+    setSaving(true);
+    setError("");
+    try {
+      const history = await layLichSuChuyenBay(item.maLichTrinh);
+      setModal({ type: "history", item, history: Array.isArray(history) ? history : [] });
+    } catch (err) {
+      setError(err.message || "Không tải được lịch sử cập nhật.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const openArchiveModal = (item) => {
+    setFormData({ reason: "" });
+    setModal({ type: "archive", item });
+  };
+
+  const closeModal = () => {
+    if (!saving) {
+      setModal(null);
+      setFormData({});
+    }
+  };
+
+  const handleFormChange = (event) => {
     const { name, value } = event.target;
-    setUpdateForm({ ...updateForm, [name]: value });
+    setFormData((current) => ({ ...current, [name]: value }));
   };
 
-  const handleUpdateFlightStatus = (event) => {
+  const handleSubmitFlight = async (event) => {
     event.preventDefault();
+    if (!modal) return;
 
-    if (!selectedRow) {
-      alert("Vui lòng chọn chuyến bay cần cập nhật.");
+    const validationMessage = validateFlightForm(formData);
+    if (validationMessage) {
+      setError(validationMessage);
       return;
     }
 
-    if (!updateForm.status) {
-      alert("Vui lòng chọn trạng thái mới.");
-      return;
+    setSaving(true);
+    setError("");
+    setSuccess("");
+    try {
+      const payload = normalizeFlightPayload(formData);
+      if (modal.mode === "edit") {
+        await capNhatChuyenBay(modal.item.maLichTrinh, payload);
+        setSuccess("Cập nhật chuyến bay thành công.");
+      } else {
+        await themChuyenBay(payload);
+        setSuccess("Thêm chuyến bay thành công.");
+      }
+      setModal(null);
+      await reloadAll();
+    } catch (err) {
+      setError(err.message || "Không lưu được chuyến bay.");
+    } finally {
+      setSaving(false);
     }
-
-    if (
-      updateForm.estimatedArrival &&
-      updateForm.estimatedDeparture &&
-      new Date(updateForm.estimatedArrival) <
-        new Date(updateForm.estimatedDeparture)
-    ) {
-      alert("Giờ ước tính hạ cánh không được nhỏ hơn giờ ước tính khởi hành.");
-      return;
-    }
-
-    if (
-      ["Chậm chuyến", "Hủy chuyến"].includes(updateForm.status) &&
-      !updateForm.reason.trim()
-    ) {
-      alert("Vui lòng nhập lý do khi chuyến bay bị chậm hoặc hủy.");
-      return;
-    }
-
-    const delayMinutes = calculateDelayMinutes(
-      selectedRow.scheduledDeparture,
-      updateForm.estimatedDeparture,
-    );
-
-    setSchedules(
-      schedules.map((schedule) =>
-        schedule.id === selectedRow.id
-          ? {
-              ...schedule,
-              status: updateForm.status,
-              estimatedDeparture:
-                updateForm.estimatedDeparture || schedule.estimatedDeparture,
-              estimatedArrival:
-                updateForm.estimatedArrival || schedule.estimatedArrival,
-              actualDeparture: updateForm.actualDeparture,
-              actualArrival: updateForm.actualArrival,
-              delayMinutes,
-              reason: updateForm.reason.trim() || schedule.reason,
-            }
-          : schedule,
-      ),
-    );
-
-    setUpdateHistory([
-      {
-        id: `LS${String(updateHistory.length + 1).padStart(3, "0")}`,
-        scheduleId: selectedRow.id,
-        flightNumber: selectedRow.flight.flightNumber,
-        oldStatus: selectedRow.status,
-        newStatus: updateForm.status,
-        oldEstimatedDeparture: selectedRow.estimatedDeparture,
-        newEstimatedDeparture: updateForm.estimatedDeparture,
-        delayMinutes,
-        reason: updateForm.reason.trim() || "Cập nhật tình hình chuyến bay",
-        updatedAt: new Date().toLocaleString("vi-VN"),
-      },
-      ...updateHistory,
-    ]);
-
-    alert("Cập nhật tình hình chuyến bay thành công.");
   };
 
-  const handleSoftDeleteFlight = (row) => {
-    const reason = window.prompt(
-      `Nhập lý do đánh dấu xóa chuyến bay ${row.flight.flightNumber}:`,
-      "Chuyến bay ngừng theo dõi hoặc dữ liệu không còn hiệu lực",
-    );
-
+  const handleArchive = async () => {
+    if (!modal) return;
+    const reason = formData.reason?.trim();
     if (!reason) {
+      setError("Vui lòng nhập lý do lưu trữ chuyến bay.");
       return;
     }
 
-    setFlights(
-      flights.map((flight) =>
-        flight.id === row.flight.id ? { ...flight, deleted: true } : flight,
-      ),
-    );
-
-    setSchedules(
-      schedules.map((schedule) =>
-        schedule.flightId === row.flight.id
-          ? {
-              ...schedule,
-              status: "Đã xóa",
-              reason,
-            }
-          : schedule,
-      ),
-    );
-
-    setDeletedHistory([
-      {
-        id: deletedHistory.length + 1,
-        flightId: row.flight.id,
-        airlineId: row.flight.airlineId,
-        flightNumber: row.flight.flightNumber,
-        type: row.flight.type,
-        departure: row.flight.departure,
-        destination: row.flight.destination,
-        deletedAt: new Date().toLocaleString("vi-VN"),
-        reason,
-      },
-      ...deletedHistory,
-    ]);
-
-    setUpdateHistory([
-      {
-        id: `LS${String(updateHistory.length + 1).padStart(3, "0")}`,
-        scheduleId: row.id,
-        flightNumber: row.flight.flightNumber,
-        oldStatus: row.status,
-        newStatus: "Đã xóa",
-        oldEstimatedDeparture: row.estimatedDeparture,
-        newEstimatedDeparture: row.estimatedDeparture,
-        delayMinutes: row.delayMinutes,
-        reason,
-        updatedAt: new Date().toLocaleString("vi-VN"),
-      },
-      ...updateHistory,
-    ]);
-
-    if (selectedScheduleId === row.id) {
-      const nextRow = flightRows.find((item) => item.id !== row.id);
-      setSelectedScheduleId(nextRow?.id || "");
+    setSaving(true);
+    setError("");
+    setSuccess("");
+    try {
+      await luuTruChuyenBay(modal.item.maLichTrinh, reason);
+      setSuccess("Đã lưu trữ chuyến bay thành công.");
+      setModal(null);
+      await reloadAll();
+    } catch (err) {
+      setError(err.message || "Lưu trữ chuyến bay thất bại.");
+    } finally {
+      setSaving(false);
     }
-
-    alert("Đã đánh dấu xóa chuyến bay và lưu vào lịch sử.");
-  };
-
-  const getStatusClassName = (status) => {
-    const statusClassMap = {
-      "Đã lên lịch": "flight-status flight-status--scheduled",
-      "Đang làm thủ tục": "flight-status flight-status--checkin",
-      "Đang bay": "flight-status flight-status--flying",
-      "Đã hạ cánh": "flight-status flight-status--landed",
-      "Hoàn thành": "flight-status flight-status--completed",
-      "Chậm chuyến": "flight-status flight-status--delayed",
-      "Hủy chuyến": "flight-status flight-status--cancelled",
-      "Đã xóa": "flight-status flight-status--deleted",
-    };
-
-    return statusClassMap[status] || "flight-status";
   };
 
   return (
     <AdminLayout activePage="flights" onNavigate={onNavigate}>
-      <section className="flight-page">
-        <div className="flight-page__heading">
-          <div>
-            <p className="flight-page__eyebrow">Flight Status Management</p>
-            <h1 className="flight-page__title">
-              Cập nhật tình hình chuyến bay
-            </h1>
-            <p className="flight-page__description">
-              Theo dõi và cập nhật trạng thái, giờ ước tính, giờ thực tế, cổng
-              ra máy bay và băng chuyền hành lý cho các chuyến bay đến và đi tại
-              sân bay quốc tế Đà Nẵng.
-            </p>
-          </div>
-
-          <div className="flight-page__heading-icon">🛫</div>
-        </div>
-
-        <div className="flight-page__stats-grid">
-          <article className="flight-stat-card">
-            <span className="flight-stat-card__icon">🧾</span>
-            <div>
-              <p className="flight-stat-card__label">Tổng chuyến bay</p>
-              <h2 className="flight-stat-card__value">{stats.total}</h2>
-            </div>
-          </article>
-
-          <article className="flight-stat-card">
-            <span className="flight-stat-card__icon">🛫</span>
-            <div>
-              <p className="flight-stat-card__label">Chuyến bay đi</p>
-              <h2 className="flight-stat-card__value">{stats.departure}</h2>
-            </div>
-          </article>
-
-          <article className="flight-stat-card">
-            <span className="flight-stat-card__icon">🛬</span>
-            <div>
-              <p className="flight-stat-card__label">Chuyến bay đến</p>
-              <h2 className="flight-stat-card__value">{stats.arrival}</h2>
-            </div>
-          </article>
-
-          <article className="flight-stat-card">
-            <span className="flight-stat-card__icon">⏱️</span>
-            <div>
-              <p className="flight-stat-card__label">Chậm / hủy</p>
-              <h2 className="flight-stat-card__value">
-                {stats.delayedOrCancelled}
-              </h2>
-            </div>
-          </article>
-        </div>
-
-        <section className="flight-panel">
-          <div className="flight-panel__header flight-panel__header--split">
-            <div>
-              <h2 className="flight-panel__title">
-                Cập nhật tình hình chuyến bay
-              </h2>
-              <p className="flight-panel__subtitle">
-                Chọn chuyến bay cần cập nhật, kiểm tra thông tin hiện tại rồi
-                cập nhật trạng thái, giờ ước tính hoặc giờ thực tế.
-              </p>
-            </div>
-
-            <span className="flight-panel__count">
-              {selectedRow?.flight.flightNumber || "Chưa chọn"}
+      <section className="flight-admin-page">
+        <header className="flight-admin-header">
+          <div className="flight-admin-header__content">
+            <span className="flight-admin-header__icon">
+              <i className="fa-solid fa-plane" aria-hidden="true" />
             </span>
+            <div>
+              <h1>Quản lý chuyến bay</h1>
+              <p>Quản lý thông tin chuyến bay đến và đi tại sân bay quốc tế Đà Nẵng.</p>
+            </div>
+          </div>
+          <div className="flight-admin-header__actions">
+            <button className="flight-admin-button flight-admin-button--primary" type="button" onClick={openCreateModal}>
+              <i className="fa-solid fa-plus" aria-hidden="true" />
+              Thêm chuyến bay
+            </button>
+            <button className="flight-admin-button flight-admin-button--secondary" type="button" onClick={reloadAll}>
+              <i className="fa-solid fa-rotate-right" aria-hidden="true" />
+              Làm mới
+            </button>
+          </div>
+        </header>
+
+        {(error || success) && (
+          <div className={error ? "flight-admin-alert flight-admin-alert--error" : "flight-admin-alert flight-admin-alert--success"}>
+            <i className={error ? "fa-solid fa-circle-xmark" : "fa-solid fa-circle-check"} aria-hidden="true" />
+            <span>{error || success}</span>
+          </div>
+        )}
+
+        <section className="flight-admin-stats" aria-label="Thống kê chuyến bay">
+          {MAIN_STAT_CARDS.map((card) => (
+            <article className={`flight-admin-stat flight-admin-stat--${card.tone}`} key={card.key}>
+              <span><i className={card.icon} aria-hidden="true" /></span>
+              <div>
+                <p>{card.label}</p>
+                <strong>{getStatValue(statistics, card.key)}</strong>
+              </div>
+            </article>
+          ))}
+        </section>
+
+        <section className="flight-admin-panel">
+          <div className="flight-admin-panel__header">
+            <div>
+              <h2>Danh sách chuyến bay</h2>
+              <p>{rows.length} chuyến bay đang hiển thị</p>
+            </div>
           </div>
 
-          <div className="flight-update-layout">
-            <div className="flight-current-card">
-              <label className="flight-form__label">
-                Chuyến bay cần cập nhật
-              </label>
-
-              <select
-                className="flight-form__input"
-                value={selectedScheduleId}
-                onChange={(event) => handleSelectSchedule(event.target.value)}
-              >
-                {flightRows.map((row) => (
-                  <option key={row.id} value={row.id}>
-                    {row.flight.flightNumber} - {row.flight.departure} →{" "}
-                    {row.flight.destination} - {row.flightDate}
+          <div className="flight-admin-filters">
+            <label className="flight-admin-field flight-admin-field--wide">
+              <span>Tìm kiếm</span>
+              <input name="keyword" value={filters.keyword} onChange={handleFilterChange} placeholder="Số hiệu, hãng hàng không, điểm đi, điểm đến" />
+            </label>
+            <label className="flight-admin-field">
+              <span>Loại chuyến bay</span>
+              <select name="type" value={filters.type} onChange={handleFilterChange}>
+                <option value="">Tất cả</option>
+                {flightTypes.map((type) => <option key={type} value={type}>{type}</option>)}
+              </select>
+            </label>
+            <label className="flight-admin-field">
+              <span>Trạng thái</span>
+              <select name="status" value={filters.status} onChange={handleFilterChange}>
+                <option value="">Tất cả</option>
+                {visibleStatuses.map((status) => <option key={status} value={status}>{status === "Đã xóa" ? "Đã lưu trữ" : status}</option>)}
+              </select>
+            </label>
+            <label className="flight-admin-field">
+              <span>Hãng hàng không</span>
+              <select name="airline" value={filters.airline} onChange={handleFilterChange}>
+                <option value="">Tất cả</option>
+                {airlines.map((airline) => (
+                  <option key={airline.maHangHangKhong} value={airline.maHangHangKhong}>
+                    {airline.maHang} - {airline.tenHangHangKhong}
                   </option>
                 ))}
               </select>
-
-              {selectedRow && (
-                <div className="flight-current-grid">
-                  <div className="flight-info-item">
-                    <span>Hãng bay</span>
-                    <strong>{selectedRow.airline?.name}</strong>
-                  </div>
-
-                  <div className="flight-info-item">
-                    <span>Loại chuyến bay</span>
-                    <strong>{selectedRow.flight.type}</strong>
-                  </div>
-
-                  <div className="flight-info-item">
-                    <span>Ngày bay</span>
-                    <strong>{selectedRow.flightDate}</strong>
-                  </div>
-
-                  <div className="flight-info-item">
-                    <span>Trạng thái hiện tại</span>
-                    <strong className={getStatusClassName(selectedRow.status)}>
-                      {selectedRow.status}
-                    </strong>
-                  </div>
-
-                  <div className="flight-info-item">
-                    <span>Giờ dự kiến khởi hành</span>
-                    <strong>
-                      {formatDateTime(selectedRow.scheduledDeparture)}
-                    </strong>
-                  </div>
-
-                  <div className="flight-info-item">
-                    <span>Giờ dự kiến hạ cánh</span>
-                    <strong>
-                      {formatDateTime(selectedRow.scheduledArrival)}
-                    </strong>
-                  </div>
-
-                  <div className="flight-info-item">
-                    <span>Cổng ra</span>
-                    <strong>{selectedRow.gateName}</strong>
-                  </div>
-
-                  <div className="flight-info-item">
-                    <span>Băng chuyền</span>
-                    <strong>{selectedRow.beltName}</strong>
-                  </div>
-                </div>
-              )}
+            </label>
+            <label className="flight-admin-field">
+              <span>Ngày bay</span>
+              <input type="date" name="date" value={filters.date} onChange={handleFilterChange} />
+            </label>
+            <label className="flight-admin-field">
+              <span>Nhà ga</span>
+              <input name="terminal" value={filters.terminal} onChange={handleFilterChange} placeholder="Ví dụ: Terminal 1" />
+            </label>
+            <label className="flight-admin-field">
+              <span>Cổng</span>
+              <input name="gate" value={filters.gate} onChange={handleFilterChange} placeholder="Ví dụ: G01" />
+            </label>
+            <label className="flight-admin-check">
+              <input type="checkbox" name="includeArchived" checked={filters.includeArchived} onChange={handleFilterChange} />
+              <span>Hiển thị chuyến bay đã lưu trữ</span>
+            </label>
+            <div className="flight-admin-filter-actions">
+              <button className="flight-admin-button flight-admin-button--primary" type="button" onClick={handleApplyFilters}>
+                <i className="fa-solid fa-filter" aria-hidden="true" />
+                Lọc
+              </button>
+              <button className="flight-admin-button flight-admin-button--secondary" type="button" onClick={handleResetFilters}>
+                <i className="fa-solid fa-filter-circle-xmark" aria-hidden="true" />
+                Xóa bộ lọc
+              </button>
             </div>
-
-            <form
-              className="flight-update-form"
-              onSubmit={handleUpdateFlightStatus}
-            >
-              <div>
-                <label className="flight-form__label">Trạng thái mới</label>
-                <select
-                  className="flight-form__input"
-                  name="status"
-                  value={updateForm.status}
-                  onChange={handleChangeUpdateForm}
-                >
-                  {FLIGHT_STATUSES.map((status) => (
-                    <option key={status} value={status}>
-                      {status}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="flight-form__label">
-                  Giờ ước tính khởi hành
-                </label>
-                <input
-                  className="flight-form__input"
-                  type="datetime-local"
-                  name="estimatedDeparture"
-                  value={updateForm.estimatedDeparture}
-                  onChange={handleChangeUpdateForm}
-                />
-              </div>
-
-              <div>
-                <label className="flight-form__label">
-                  Giờ ước tính hạ cánh
-                </label>
-                <input
-                  className="flight-form__input"
-                  type="datetime-local"
-                  name="estimatedArrival"
-                  value={updateForm.estimatedArrival}
-                  onChange={handleChangeUpdateForm}
-                />
-              </div>
-
-              <div>
-                <label className="flight-form__label">
-                  Giờ thực tế khởi hành
-                </label>
-                <input
-                  className="flight-form__input"
-                  type="datetime-local"
-                  name="actualDeparture"
-                  value={updateForm.actualDeparture}
-                  onChange={handleChangeUpdateForm}
-                />
-              </div>
-
-              <div>
-                <label className="flight-form__label">
-                  Giờ thực tế hạ cánh
-                </label>
-                <input
-                  className="flight-form__input"
-                  type="datetime-local"
-                  name="actualArrival"
-                  value={updateForm.actualArrival}
-                  onChange={handleChangeUpdateForm}
-                />
-              </div>
-
-              <div>
-                <label className="flight-form__label">Lý do cập nhật</label>
-                <input
-                  className="flight-form__input"
-                  name="reason"
-                  value={updateForm.reason}
-                  onChange={handleChangeUpdateForm}
-                  placeholder="Ví dụ: thời tiết xấu, thay đổi khai thác..."
-                />
-              </div>
-
-              <div className="flight-update-form__actions">
-                <button className="flight-form__submit-button" type="submit">
-                  Cập nhật tình hình
-                </button>
-              </div>
-            </form>
-          </div>
-        </section>
-
-        <section className="flight-panel">
-          <div className="flight-panel__header flight-panel__header--split">
-            <div>
-              <h2 className="flight-panel__title">
-                Danh sách chuyến bay đang theo dõi
-              </h2>
-              <p className="flight-panel__subtitle">
-                Lọc chuyến bay theo số hiệu, hãng bay, loại chuyến bay, ngày bay
-                hoặc trạng thái hiện tại.
-              </p>
-            </div>
-
-            <span className="flight-panel__count">
-              {filteredRows.length} chuyến bay
-            </span>
           </div>
 
-          <div className="flight-toolbar">
-            <input
-              className="flight-toolbar__input"
-              value={keyword}
-              onChange={(event) => setKeyword(event.target.value)}
-              placeholder="Tìm số hiệu, hãng bay, điểm đi, điểm đến..."
-            />
-
-            <select
-              className="flight-toolbar__input"
-              value={airlineFilter}
-              onChange={(event) => setAirlineFilter(event.target.value)}
-            >
-              <option value="Tất cả">Tất cả hãng bay</option>
-              {initialAirlines.map((airline) => (
-                <option key={airline.id} value={airline.id}>
-                  {airline.name}
-                </option>
-              ))}
-            </select>
-
-            <select
-              className="flight-toolbar__input"
-              value={typeFilter}
-              onChange={(event) => setTypeFilter(event.target.value)}
-            >
-              <option value="Tất cả">Tất cả loại</option>
-              <option value="Đi">Chuyến bay đi</option>
-              <option value="Đến">Chuyến bay đến</option>
-            </select>
-
-            <input
-              className="flight-toolbar__input"
-              type="date"
-              value={dateFilter}
-              onChange={(event) => setDateFilter(event.target.value)}
-            />
-
-            <select
-              className="flight-toolbar__input"
-              value={statusFilter}
-              onChange={(event) => setStatusFilter(event.target.value)}
-            >
-              <option value="Tất cả">Tất cả trạng thái</option>
-              {FLIGHT_STATUSES.map((status) => (
-                <option key={status} value={status}>
-                  {status}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flight-table-wrapper">
-            <div className="flight-table">
-              <div className="flight-table__header">
-                <span>Số hiệu</span>
-                <span>Hãng bay</span>
-                <span>Điểm đi</span>
-                <span>Điểm đến</span>
-                <span>Giờ dự kiến</span>
-                <span>Giờ ước tính</span>
-                <span>Trạng thái</span>
-                <span>Cổng</span>
-                <span>Băng chuyền</span>
-                <span>Thao tác</span>
+          <div className="flight-admin-table-wrap">
+            {loading ? (
+              <div className="flight-admin-state">
+                <i className="fa-solid fa-spinner fa-spin" aria-hidden="true" />
+                <span>Đang tải dữ liệu...</span>
               </div>
-
-              {filteredRows.map((row) => (
-                <div className="flight-table__row" key={row.id}>
-                  <span className="flight-table__code">
-                    {row.flight.flightNumber}
-                  </span>
-
-                  <span className="flight-table__text">
-                    {row.airline?.name}
-                  </span>
-
-                  <span className="flight-table__text">
-                    {row.flight.departure}
-                  </span>
-
-                  <span className="flight-table__text">
-                    {row.flight.destination}
-                  </span>
-
-                  <span className="flight-table__text">
-                    {formatDateTime(row.scheduledDeparture)}
-                  </span>
-
-                  <span className="flight-table__text">
-                    {formatDateTime(row.estimatedDeparture)}
-                  </span>
-
-                  <span className={getStatusClassName(row.status)}>
-                    {row.status}
-                  </span>
-
-                  <span className="flight-table__text">{row.gateName}</span>
-
-                  <span className="flight-table__text">{row.beltName}</span>
-
-                  <div className="flight-table__actions">
-                    <button
-                      className="flight-table__button"
-                      type="button"
-                      onClick={() => handleSelectSchedule(row.id)}
-                    >
-                      Cập nhật
-                    </button>
-
-                    <button
-                      className="flight-table__button"
-                      type="button"
-                      onClick={() => setDetailScheduleId(row.id)}
-                    >
-                      Chi tiết
-                    </button>
-
-                    <button
-                      className="flight-table__button flight-table__button--danger"
-                      type="button"
-                      onClick={() => handleSoftDeleteFlight(row)}
-                    >
-                      Đánh dấu xóa
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {filteredRows.length === 0 && (
-              <div className="flight-empty">
-                <span>🔎</span>
-                <p>Không tìm thấy chuyến bay phù hợp.</p>
+            ) : rows.length === 0 ? (
+              <div className="flight-admin-state">
+                <i className="fa-solid fa-magnifying-glass" aria-hidden="true" />
+                <span>Không có chuyến bay phù hợp.</span>
               </div>
+            ) : (
+              <FlightTable
+                rows={rows}
+                onView={openDetailModal}
+                onEdit={openEditModal}
+                onHistory={openHistoryModal}
+                onArchive={openArchiveModal}
+              />
             )}
           </div>
         </section>
 
-        <section className="flight-panel">
-          <div className="flight-panel__header">
-            <h2 className="flight-panel__title">Lịch sử cập nhật gần đây</h2>
-            <p className="flight-panel__subtitle">
-              Dữ liệu mô phỏng bảng LICHSUCAPNHAT, dùng để theo dõi các lần thay
-              đổi trạng thái hoặc giờ ước tính.
-            </p>
-          </div>
-
-          <div className="flight-history-list">
-            {updateHistory.slice(0, 5).map((history) => (
-              <article className="flight-history-card" key={history.id}>
-                <div>
-                  <strong>{history.flightNumber}</strong>
-                  <p>
-                    {history.oldStatus} → {history.newStatus}
-                  </p>
-                </div>
-
-                <div>
-                  <span>{history.updatedAt}</span>
-                  <p>{history.reason}</p>
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        {deletedHistory.length > 0 && (
-          <section className="flight-panel">
-            <div className="flight-panel__header">
-              <h2 className="flight-panel__title">
-                Lịch sử chuyến bay đã đánh dấu xóa
-              </h2>
-              <p className="flight-panel__subtitle">
-                Dữ liệu mô phỏng bảng LICHSUCHUYENBAYXOA.
-              </p>
-            </div>
-
-            <div className="flight-history-list">
-              {deletedHistory.map((history) => (
-                <article className="flight-history-card" key={history.id}>
-                  <div>
-                    <strong>{history.flightNumber}</strong>
-                    <p>
-                      {history.departure} → {history.destination}
-                    </p>
-                  </div>
-
-                  <div>
-                    <span>{history.deletedAt}</span>
-                    <p>{history.reason}</p>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </section>
+        {modal?.type === "form" && (
+          <FlightFormModal
+            modal={modal}
+            formData={formData}
+            airlines={airlines}
+            flightTypes={flightTypes}
+            saving={saving}
+            onChange={handleFormChange}
+            onClose={closeModal}
+            onSubmit={handleSubmitFlight}
+          />
         )}
 
-        {detailRow && (
-          <div className="flight-modal-backdrop">
-            <div className="flight-modal">
-              <div className="flight-modal__header">
-                <div>
-                  <p className="flight-page__eyebrow">Chi tiết chuyến bay</p>
-                  <h2>{detailRow.flight.flightNumber}</h2>
-                </div>
+        {modal?.type === "detail" && (
+          <DetailModal detail={modal.detail} onClose={closeModal} />
+        )}
 
-                <button
-                  className="flight-modal__close"
-                  type="button"
-                  onClick={() => setDetailScheduleId(null)}
-                >
-                  ×
-                </button>
-              </div>
+        {modal?.type === "history" && (
+          <HistoryModal item={modal.item} history={modal.history} onClose={closeModal} />
+        )}
 
-              <div className="flight-modal__grid">
-                <div className="flight-detail-card">
-                  <span>Hãng hàng không</span>
-                  <strong>{detailRow.airline?.name}</strong>
-                </div>
-
-                <div className="flight-detail-card">
-                  <span>Loại chuyến bay</span>
-                  <strong>{detailRow.flight.type}</strong>
-                </div>
-
-                <div className="flight-detail-card">
-                  <span>Điểm đi</span>
-                  <strong>{detailRow.flight.departure}</strong>
-                </div>
-
-                <div className="flight-detail-card">
-                  <span>Điểm đến</span>
-                  <strong>{detailRow.flight.destination}</strong>
-                </div>
-
-                <div className="flight-detail-card">
-                  <span>Ngày bay</span>
-                  <strong>{detailRow.flightDate}</strong>
-                </div>
-
-                <div className="flight-detail-card">
-                  <span>Cổng ra</span>
-                  <strong>{detailRow.gateName}</strong>
-                </div>
-
-                <div className="flight-detail-card">
-                  <span>Băng chuyền</span>
-                  <strong>{detailRow.beltName}</strong>
-                </div>
-
-                <div className="flight-detail-card">
-                  <span>Số phút chậm</span>
-                  <strong>{detailRow.delayMinutes} phút</strong>
-                </div>
-              </div>
-
-              <div className="flight-modal__section">
-                <h3>Thông tin lịch trình</h3>
-
-                <div className="flight-schedule-card">
-                  <div>
-                    <span>Giờ dự kiến khởi hành</span>
-                    <p>{formatDateTime(detailRow.scheduledDeparture)}</p>
-                  </div>
-
-                  <div>
-                    <span>Giờ dự kiến hạ cánh</span>
-                    <p>{formatDateTime(detailRow.scheduledArrival)}</p>
-                  </div>
-
-                  <div>
-                    <span>Giờ ước tính khởi hành</span>
-                    <p>{formatDateTime(detailRow.estimatedDeparture)}</p>
-                  </div>
-
-                  <div>
-                    <span>Giờ ước tính hạ cánh</span>
-                    <p>{formatDateTime(detailRow.estimatedArrival)}</p>
-                  </div>
-
-                  <div>
-                    <span>Trạng thái</span>
-                    <p className={getStatusClassName(detailRow.status)}>
-                      {detailRow.status}
-                    </p>
-                  </div>
-
-                  <div>
-                    <span>Lý do gần nhất</span>
-                    <p>{detailRow.reason || "Chưa có"}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flight-modal__section">
-                <h3>Lịch sử cập nhật</h3>
-
-                {selectedHistory.length > 0 ? (
-                  selectedHistory.map((history) => (
-                    <article className="flight-history-card" key={history.id}>
-                      <div>
-                        <strong>
-                          {history.oldStatus} → {history.newStatus}
-                        </strong>
-                        <p>
-                          Giờ ước tính:{" "}
-                          {formatDateTime(history.oldEstimatedDeparture)} →{" "}
-                          {formatDateTime(history.newEstimatedDeparture)}
-                        </p>
-                      </div>
-
-                      <div>
-                        <span>{history.updatedAt}</span>
-                        <p>{history.reason}</p>
-                      </div>
-                    </article>
-                  ))
-                ) : (
-                  <p className="flight-modal__empty">
-                    Chưa có lịch sử cập nhật cho chuyến bay này.
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
+        {modal?.type === "archive" && (
+          <ArchiveModal
+            item={modal.item}
+            formData={formData}
+            saving={saving}
+            onChange={handleFormChange}
+            onClose={closeModal}
+            onArchive={handleArchive}
+          />
         )}
       </section>
     </AdminLayout>
   );
+}
+
+function FlightTable({ rows, onView, onEdit, onHistory, onArchive }) {
+  return (
+    <table className="flight-admin-table">
+      <thead>
+        <tr>
+          <th>Số hiệu chuyến bay</th>
+          <th>Hãng hàng không</th>
+          <th>Loại</th>
+          <th>Điểm đi</th>
+          <th>Điểm đến</th>
+          <th>Ngày bay</th>
+          <th>Giờ dự kiến</th>
+          <th>Giờ ước tính</th>
+          <th>Trạng thái</th>
+          <th>Số phút chậm</th>
+          <th>Cổng</th>
+          <th>Băng chuyền</th>
+          <th>Thao tác</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((row) => (
+          <tr key={row.maLichTrinh}>
+            <td className="flight-admin-code">{row.soHieuChuyenBay}</td>
+            <td>{displayValue(row.tenHangHangKhong)}</td>
+            <td><span className="flight-admin-badge">{displayValue(row.loaiChuyenBay)}</span></td>
+            <td>{displayValue(row.diemDi)}</td>
+            <td>{displayValue(row.diemDen)}</td>
+            <td>{formatDate(row.ngayBay)}</td>
+            <td>{formatDateTime(primaryScheduledTime(row))}</td>
+            <td>{formatDateTime(primaryEstimatedTime(row))}</td>
+            <td><span className={statusClass(row.trangThaiHienTai)}>{displayStatus(row.trangThaiHienTai)}</span></td>
+            <td>{displayDelay(row.soPhutCham)}</td>
+            <td>{row.tenCong || "Chưa phân công"}</td>
+            <td>{row.tenBangChuyenHanhLy || "Chưa phân công"}</td>
+            <td>
+              <div className="flight-admin-actions">
+                <button type="button" title="Xem" aria-label="Xem" onClick={() => onView(row)}>
+                  <i className="fa-solid fa-eye" aria-hidden="true" />
+                </button>
+                <button type="button" title="Sửa" aria-label="Sửa" onClick={() => onEdit(row)}>
+                  <i className="fa-solid fa-pen-to-square" aria-hidden="true" />
+                </button>
+                <button type="button" title="Lịch sử" aria-label="Lịch sử" onClick={() => onHistory(row)}>
+                  <i className="fa-solid fa-clock-rotate-left" aria-hidden="true" />
+                </button>
+                {canArchive(row) && (
+                  <button className="flight-admin-actions__danger" type="button" title="Lưu trữ" aria-label="Lưu trữ" onClick={() => onArchive(row)}>
+                    <i className="fa-solid fa-box-archive" aria-hidden="true" />
+                  </button>
+                )}
+              </div>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+function FlightFormModal({ modal, formData, airlines, flightTypes, saving, onChange, onClose, onSubmit }) {
+  const isEdit = modal.mode === "edit";
+  return (
+    <Modal title={isEdit ? "Sửa chuyến bay" : "Thêm chuyến bay"} onClose={onClose} wide>
+      <form onSubmit={onSubmit}>
+        <div className="flight-admin-modal__section">
+          <h4>Thông tin chuyến bay</h4>
+          <div className="flight-admin-modal__body">
+            <label className="flight-admin-field">
+              <span>Số hiệu chuyến bay</span>
+              <input name="soHieuChuyenBay" value={formData.soHieuChuyenBay || ""} onChange={onChange} required maxLength={20} />
+            </label>
+            <label className="flight-admin-field">
+              <span>Hãng hàng không</span>
+              <select name="maHangHangKhong" value={formData.maHangHangKhong || ""} onChange={onChange} required>
+                <option value="">Chọn hãng hàng không</option>
+                {airlines.map((airline) => (
+                  <option key={airline.maHangHangKhong} value={airline.maHangHangKhong}>
+                    {airline.maHang} - {airline.tenHangHangKhong}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flight-admin-field">
+              <span>Loại chuyến bay</span>
+              <select name="loaiChuyenBay" value={formData.loaiChuyenBay || ""} onChange={onChange} required>
+                <option value="">Chọn loại</option>
+                {flightTypes.map((type) => <option key={type} value={type}>{type}</option>)}
+              </select>
+            </label>
+            <label className="flight-admin-field">
+              <span>Điểm đi</span>
+              <input name="diemDi" value={formData.diemDi || ""} onChange={onChange} required maxLength={100} />
+            </label>
+            <label className="flight-admin-field">
+              <span>Điểm đến</span>
+              <input name="diemDen" value={formData.diemDen || ""} onChange={onChange} required maxLength={100} />
+            </label>
+          </div>
+        </div>
+
+        <div className="flight-admin-modal__section">
+          <h4>Thông tin lịch trình</h4>
+          <div className="flight-admin-modal__body">
+            <label className="flight-admin-field">
+              <span>Ngày bay</span>
+              <input type="date" name="ngayBay" value={formData.ngayBay || ""} onChange={onChange} required />
+            </label>
+            <label className="flight-admin-field">
+              <span>Giờ dự kiến khởi hành</span>
+              <input type="datetime-local" name="gioDuKienKhoiHanh" value={formData.gioDuKienKhoiHanh || ""} onChange={onChange} required />
+            </label>
+            <label className="flight-admin-field">
+              <span>Giờ dự kiến hạ cánh</span>
+              <input type="datetime-local" name="gioDuKienHaCanh" value={formData.gioDuKienHaCanh || ""} onChange={onChange} required />
+            </label>
+            {isEdit && (
+              <>
+                <label className="flight-admin-field">
+                  <span>Giờ ước tính khởi hành</span>
+                  <input type="datetime-local" name="gioUocTinhKhoiHanh" value={formData.gioUocTinhKhoiHanh || ""} onChange={onChange} />
+                </label>
+                <label className="flight-admin-field">
+                  <span>Giờ ước tính hạ cánh</span>
+                  <input type="datetime-local" name="gioUocTinhHaCanh" value={formData.gioUocTinhHaCanh || ""} onChange={onChange} />
+                </label>
+              </>
+            )}
+          </div>
+        </div>
+        <ModalFooter saving={saving} onClose={onClose} saveLabel={isEdit ? "Cập nhật" : "Lưu"} />
+      </form>
+    </Modal>
+  );
+}
+
+function DetailModal({ detail, onClose }) {
+  const flight = detail?.thongTinChuyenBay || {};
+  return (
+    <Modal title={`Chi tiết ${flight.soHieuChuyenBay || "chuyến bay"}`} onClose={onClose} wide>
+      <div className="flight-admin-detail">
+        <DetailSection title="Thông tin chuyến bay" fields={flightInfoFields(flight)} />
+        <DetailSection title="Thông tin lịch trình" fields={scheduleFields(flight)} />
+        <DetailSection title="Thông tin điều phối" fields={assignmentFields(flight)} />
+        <section>
+          <h3>Lịch sử cập nhật gần nhất</h3>
+          <HistoryList items={detail?.lichSuCapNhatGanDay || []} compact />
+        </section>
+      </div>
+      <div className="flight-admin-modal__footer">
+        <button className="flight-admin-button flight-admin-button--primary" type="button" onClick={onClose}>Đóng</button>
+      </div>
+    </Modal>
+  );
+}
+
+function DetailSection({ title, fields }) {
+  return (
+    <section>
+      <h3>{title}</h3>
+      <div className="flight-admin-detail-grid">
+        {fields.map((item) => (
+          <div className="flight-admin-detail-item" key={item.label}>
+            <span>{item.label}</span>
+            <strong>{displayValue(item.value)}</strong>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function HistoryModal({ item, history, onClose }) {
+  return (
+    <Modal title={`Lịch sử ${item.soHieuChuyenBay}`} onClose={onClose} wide>
+      <div className="flight-admin-history">
+        <HistoryList items={history} />
+      </div>
+      <div className="flight-admin-modal__footer">
+        <button className="flight-admin-button flight-admin-button--primary" type="button" onClick={onClose}>Đóng</button>
+      </div>
+    </Modal>
+  );
+}
+
+function HistoryList({ items, compact = false }) {
+  if (!items.length) {
+    return <p className="flight-admin-empty-text">Chưa có lịch sử cập nhật cho chuyến bay này.</p>;
+  }
+
+  if (compact) {
+    return (
+      <div className="flight-admin-list">
+        {items.map((item) => (
+          <article key={item.maLichSuCapNhat}>
+            <strong>{displayValue(item.trangThaiCu)} → {displayValue(item.trangThaiMoi)}</strong>
+            <p>{displayValue(item.noiDungCapNhat || item.lyDoCapNhat)}</p>
+            <span>{displayValue(item.tenDangNhap)} · {formatDateTime(item.thoiGianCapNhat)}</span>
+          </article>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="flight-admin-history-table-wrap">
+      <table className="flight-admin-history-table">
+        <thead>
+          <tr>
+            <th>Thời gian cập nhật</th>
+            <th>Người cập nhật</th>
+            <th>Trạng thái cũ</th>
+            <th>Trạng thái mới</th>
+            <th>Giờ ước tính cũ</th>
+            <th>Giờ ước tính mới</th>
+            <th>Số phút chậm</th>
+            <th>Lý do cập nhật</th>
+            <th>Nội dung cập nhật</th>
+          </tr>
+        </thead>
+        <tbody>
+          {items.map((item) => (
+            <tr key={item.maLichSuCapNhat}>
+              <td>{formatDateTime(item.thoiGianCapNhat)}</td>
+              <td>{displayValue(item.tenDangNhap)}</td>
+              <td>{displayValue(item.trangThaiCu)}</td>
+              <td>{displayValue(item.trangThaiMoi)}</td>
+              <td>{formatDateTime(item.gioUocTinhCu)}</td>
+              <td>{formatDateTime(item.gioUocTinhMoi)}</td>
+              <td>{item.soPhutChamMoi ?? 0}</td>
+              <td>{displayValue(item.lyDoCapNhat)}</td>
+              <td>{displayValue(item.noiDungCapNhat)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function ArchiveModal({ item, formData, saving, onChange, onClose, onArchive }) {
+  const disabled = saving || !formData.reason?.trim();
+  return (
+    <Modal title="Lưu trữ chuyến bay" onClose={onClose}>
+      <div className="flight-admin-delete">
+        <i className="fa-solid fa-box-archive" aria-hidden="true" />
+        <p>Lưu trữ chuyến bay <strong>{item.soHieuChuyenBay}</strong> khi dữ liệu nhập sai, trùng hoặc không còn hợp lệ.</p>
+        <label className="flight-admin-field">
+          <span>Lý do lưu trữ</span>
+          <textarea name="reason" value={formData.reason || ""} onChange={onChange} rows={3} required />
+        </label>
+      </div>
+      <div className="flight-admin-modal__footer">
+        <button className="flight-admin-button flight-admin-button--secondary" type="button" onClick={onClose} disabled={saving}>Hủy</button>
+        <button className="flight-admin-button flight-admin-button--danger" type="button" onClick={onArchive} disabled={disabled}>
+          <i className={saving ? "fa-solid fa-spinner fa-spin" : "fa-solid fa-box-archive"} aria-hidden="true" />
+          Lưu trữ
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
+function Modal({ title, children, onClose, wide = false }) {
+  return (
+    <div className="flight-admin-modal-backdrop" role="presentation">
+      <div className={wide ? "flight-admin-modal flight-admin-modal--wide" : "flight-admin-modal"} role="dialog" aria-modal="true" aria-label={title}>
+        <div className="flight-admin-modal__header">
+          <h3>{title}</h3>
+          <button type="button" aria-label="Đóng" onClick={onClose}>
+            <i className="fa-solid fa-xmark" aria-hidden="true" />
+          </button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function ModalFooter({ saving, onClose, saveLabel }) {
+  return (
+    <div className="flight-admin-modal__footer">
+      <button className="flight-admin-button flight-admin-button--secondary" type="button" onClick={onClose} disabled={saving}>Hủy</button>
+      <button className="flight-admin-button flight-admin-button--primary" type="submit" disabled={saving}>
+        <i className={saving ? "fa-solid fa-spinner fa-spin" : "fa-solid fa-floppy-disk"} aria-hidden="true" />
+        {saveLabel}
+      </button>
+    </div>
+  );
+}
+
+function createEmptyFlightForm(airlines, flightTypes) {
+  return {
+    maHangHangKhong: airlines[0]?.maHangHangKhong || "",
+    soHieuChuyenBay: "",
+    loaiChuyenBay: flightTypes[0] || "",
+    diemDi: "",
+    diemDen: "",
+    ngayBay: "",
+    gioDuKienKhoiHanh: "",
+    gioDuKienHaCanh: "",
+    gioUocTinhKhoiHanh: "",
+    gioUocTinhHaCanh: "",
+  };
+}
+
+function mapFlightToForm(item) {
+  return {
+    maHangHangKhong: item.maHangHangKhong || "",
+    soHieuChuyenBay: item.soHieuChuyenBay || "",
+    loaiChuyenBay: item.loaiChuyenBay || "",
+    diemDi: item.diemDi || "",
+    diemDen: item.diemDen || "",
+    ngayBay: item.ngayBay || "",
+    gioDuKienKhoiHanh: normalizeInputDateTime(item.gioDuKienKhoiHanh),
+    gioDuKienHaCanh: normalizeInputDateTime(item.gioDuKienHaCanh),
+    gioUocTinhKhoiHanh: normalizeInputDateTime(item.gioUocTinhKhoiHanh),
+    gioUocTinhHaCanh: normalizeInputDateTime(item.gioUocTinhHaCanh),
+  };
+}
+
+function normalizeFlightPayload(data) {
+  return {
+    maHangHangKhong: data.maHangHangKhong || "",
+    soHieuChuyenBay: data.soHieuChuyenBay?.trim() || "",
+    loaiChuyenBay: data.loaiChuyenBay || "",
+    diemDi: data.diemDi?.trim() || "",
+    diemDen: data.diemDen?.trim() || "",
+    ngayBay: data.ngayBay || "",
+    gioDuKienKhoiHanh: data.gioDuKienKhoiHanh || null,
+    gioDuKienHaCanh: data.gioDuKienHaCanh || null,
+    gioUocTinhKhoiHanh: data.gioUocTinhKhoiHanh || null,
+    gioUocTinhHaCanh: data.gioUocTinhHaCanh || null,
+  };
+}
+
+function validateFlightForm(data) {
+  if (!data.soHieuChuyenBay?.trim()) return "Số hiệu chuyến bay không được để trống.";
+  if (!data.maHangHangKhong) return "Vui lòng chọn hãng hàng không.";
+  if (!["Đến", "Đi"].includes(data.loaiChuyenBay)) return "Loại chuyến bay chỉ được là Đến hoặc Đi.";
+  if (!data.diemDi?.trim() || !data.diemDen?.trim()) return "Điểm đi và điểm đến không được để trống.";
+  if (data.diemDi.trim().toLowerCase() === data.diemDen.trim().toLowerCase()) return "Điểm đi và điểm đến không được giống nhau.";
+  if (!data.ngayBay) return "Ngày bay không được để trống.";
+  if (!data.gioDuKienKhoiHanh || !data.gioDuKienHaCanh) return "Giờ dự kiến không được để trống.";
+  if (new Date(data.gioDuKienHaCanh) <= new Date(data.gioDuKienKhoiHanh)) return "Giờ hạ cánh phải lớn hơn giờ khởi hành.";
+  if (data.gioUocTinhKhoiHanh && data.gioUocTinhHaCanh && new Date(data.gioUocTinhHaCanh) <= new Date(data.gioUocTinhKhoiHanh)) {
+    return "Giờ ước tính hạ cánh phải lớn hơn giờ ước tính khởi hành.";
+  }
+  return "";
+}
+
+function normalizeInputDateTime(value) {
+  return value ? value.slice(0, 16) : "";
+}
+
+function displayValue(value) {
+  return value === null || value === undefined || value === "" ? "Chưa cập nhật" : value;
+}
+
+function displayStatus(status) {
+  return status === "Đã xóa" ? "Đã lưu trữ" : displayValue(status);
+}
+
+function displayDelay(minutes) {
+  return minutes && minutes > 0 ? `${minutes} phút` : "Đúng giờ";
+}
+
+function formatDate(value) {
+  if (!value) return "Chưa cập nhật";
+  const [year, month, day] = value.split("-");
+  return year && month && day ? `${day}/${month}/${year}` : value;
+}
+
+function formatDateTime(value) {
+  if (!value) return "Chưa cập nhật";
+  const [datePart, timePart = ""] = value.split("T");
+  const formattedDate = formatDate(datePart);
+  return timePart ? `${formattedDate} ${timePart.slice(0, 5)}` : formattedDate;
+}
+
+function primaryScheduledTime(row) {
+  return row.loaiChuyenBay === "Đến" ? row.gioDuKienHaCanh : row.gioDuKienKhoiHanh;
+}
+
+function primaryEstimatedTime(row) {
+  return row.loaiChuyenBay === "Đến" ? row.gioUocTinhHaCanh : row.gioUocTinhKhoiHanh;
+}
+
+function canArchive(row) {
+  return row.trangThaiHienTai !== "Hoàn thành" && row.trangThaiHienTai !== "Đã xóa";
+}
+
+function getStatValue(statistics, key) {
+  if (key === "soDangKhaiThac") {
+    return statistics.soDangKhaiThac ?? ((statistics.soDaLenLich ?? 0) + (statistics.soDangLamThuTuc ?? 0) + (statistics.soDangBay ?? 0) + (statistics.soChamChuyen ?? 0));
+  }
+  if (key === "soChamHuy") {
+    return statistics.soChamHuy ?? ((statistics.soChamChuyen ?? 0) + (statistics.soHuyChuyen ?? 0));
+  }
+  return statistics?.[key] ?? 0;
+}
+
+function statusClass(status) {
+  const map = {
+    "Đã lên lịch": "flight-admin-status flight-admin-status--scheduled",
+    "Đang làm thủ tục": "flight-admin-status flight-admin-status--checkin",
+    "Đang bay": "flight-admin-status flight-admin-status--flying",
+    "Chậm chuyến": "flight-admin-status flight-admin-status--delayed",
+    "Hủy chuyến": "flight-admin-status flight-admin-status--cancelled",
+    "Hoàn thành": "flight-admin-status flight-admin-status--completed",
+    "Đã xóa": "flight-admin-status flight-admin-status--deleted",
+  };
+  return map[status] || "flight-admin-status";
+}
+
+function flightInfoFields(flight) {
+  return [
+    { label: "Mã chuyến bay", value: flight.maChuyenBay },
+    { label: "Số hiệu chuyến bay", value: flight.soHieuChuyenBay },
+    { label: "Hãng hàng không", value: flight.tenHangHangKhong },
+    { label: "Loại chuyến bay", value: flight.loaiChuyenBay },
+    { label: "Điểm đi", value: flight.diemDi },
+    { label: "Điểm đến", value: flight.diemDen },
+  ];
+}
+
+function scheduleFields(flight) {
+  return [
+    { label: "Mã lịch trình", value: flight.maLichTrinh },
+    { label: "Ngày bay", value: formatDate(flight.ngayBay) },
+    { label: "Giờ dự kiến khởi hành", value: formatDateTime(flight.gioDuKienKhoiHanh) },
+    { label: "Giờ dự kiến hạ cánh", value: formatDateTime(flight.gioDuKienHaCanh) },
+    { label: "Giờ ước tính khởi hành", value: formatDateTime(flight.gioUocTinhKhoiHanh) },
+    { label: "Giờ ước tính hạ cánh", value: formatDateTime(flight.gioUocTinhHaCanh) },
+    { label: "Giờ thực tế khởi hành", value: formatDateTime(flight.gioThucTeKhoiHanh) },
+    { label: "Giờ thực tế hạ cánh", value: formatDateTime(flight.gioThucTeHaCanh) },
+    { label: "Trạng thái hiện tại", value: displayStatus(flight.trangThaiHienTai) },
+    { label: "Số phút chậm", value: flight.soPhutCham ?? 0 },
+    { label: "Lý do chậm/hủy", value: flight.lyDoChamHoacHuy },
+  ];
+}
+
+function assignmentFields(flight) {
+  return [
+    { label: "Cổng hiện tại", value: flight.tenCong || "Chưa phân công" },
+    { label: "Nhà ga", value: flight.tenNhaGa || flight.tenNhaGaBangChuyen },
+    { label: "Băng chuyền hành lý", value: flight.tenBangChuyenHanhLy || "Chưa phân công" },
+    { label: "Bắt đầu dùng cổng", value: formatDateTime(flight.thoiGianBatDauSuDungCong) },
+    { label: "Kết thúc dùng cổng", value: formatDateTime(flight.thoiGianKetThucSuDungCong) },
+    { label: "Bắt đầu dùng băng chuyền", value: formatDateTime(flight.thoiGianBatDauSuDungBangChuyen) },
+    { label: "Kết thúc dùng băng chuyền", value: formatDateTime(flight.thoiGianKetThucSuDungBangChuyen) },
+  ];
 }
 
 export default FlightManagementPage;

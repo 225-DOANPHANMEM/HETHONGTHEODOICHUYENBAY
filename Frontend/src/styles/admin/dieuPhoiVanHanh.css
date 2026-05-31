@@ -1,0 +1,621 @@
+.dispatch-admin-page {
+  width: 100%;
+  color: #0f172a;
+}
+
+.dispatch-admin-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 20px;
+}
+
+.dispatch-admin-header__content {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.dispatch-admin-header__icon,
+.dispatch-admin-stat span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  background: #0f2a43;
+}
+
+.dispatch-admin-header__icon {
+  width: 48px;
+  height: 48px;
+  flex: 0 0 48px;
+  border-radius: 8px;
+  font-size: 20px;
+}
+
+.dispatch-admin-header h1 {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.dispatch-admin-header p {
+  max-width: 760px;
+  margin: 8px 0 0;
+  color: #526173;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.dispatch-admin-button {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background-color 0.18s ease, border-color 0.18s ease;
+}
+
+.dispatch-admin-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.dispatch-admin-button--primary {
+  color: #ffffff;
+  border: 1px solid #0f2a43;
+  background: #0f2a43;
+}
+
+.dispatch-admin-button--primary:hover:not(:disabled) {
+  background: #173b5b;
+}
+
+.dispatch-admin-button--secondary {
+  color: #0f2a43;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+}
+
+.dispatch-admin-button--secondary:hover:not(:disabled) {
+  border-color: #0f2a43;
+}
+
+.dispatch-admin-button--danger {
+  color: #ffffff;
+  border: 1px solid #b91c1c;
+  background: #b91c1c;
+}
+
+.dispatch-admin-alert,
+.dispatch-admin-warning,
+.dispatch-admin-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.dispatch-admin-alert {
+  min-height: 44px;
+  margin-bottom: 16px;
+}
+
+.dispatch-admin-alert--error,
+.dispatch-admin-warning {
+  color: #991b1b;
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+}
+
+.dispatch-admin-alert--success {
+  color: #166534;
+  border: 1px solid #bbf7d0;
+  background: #f0fdf4;
+}
+
+.dispatch-admin-info {
+  color: #075985;
+  border: 1px solid #bae6fd;
+  background: #f0f9ff;
+}
+
+.dispatch-admin-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.dispatch-admin-stat {
+  min-height: 96px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #dbe3ec;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(15, 42, 67, 0.06);
+}
+
+.dispatch-admin-stat span {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  border-radius: 8px;
+  font-size: 17px;
+}
+
+.dispatch-admin-stat p {
+  margin: 0;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.dispatch-admin-stat strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 26px;
+  line-height: 1;
+}
+
+.dispatch-admin-panel {
+  padding: 18px;
+  border: 1px solid #dbe3ec;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 10px 30px rgba(15, 42, 67, 0.06);
+}
+
+.dispatch-admin-panel__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.dispatch-admin-panel__header h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.dispatch-admin-panel__header p {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.dispatch-admin-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 16px;
+}
+
+.dispatch-admin-field--wide {
+  grid-column: span 2;
+}
+
+.dispatch-admin-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dispatch-admin-field--full {
+  grid-column: 1 / -1;
+}
+
+.dispatch-admin-field span {
+  color: #334155;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.dispatch-admin-field input,
+.dispatch-admin-field select,
+.dispatch-admin-field textarea {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  outline: none;
+  color: #0f172a;
+  background: #ffffff;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.dispatch-admin-field input,
+.dispatch-admin-field select {
+  height: 40px;
+  padding: 0 10px;
+}
+
+.dispatch-admin-field textarea {
+  min-height: 84px;
+  padding: 10px;
+  resize: vertical;
+}
+
+.dispatch-admin-field input:focus,
+.dispatch-admin-field select:focus,
+.dispatch-admin-field textarea:focus {
+  border-color: #0f2a43;
+  box-shadow: 0 0 0 3px rgba(15, 42, 67, 0.12);
+}
+
+.dispatch-admin-filter-actions,
+.dispatch-admin-actions,
+.dispatch-admin-modal__footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dispatch-admin-filter-actions {
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.dispatch-admin-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.dispatch-admin-table {
+  width: 100%;
+  min-width: 1680px;
+  border-collapse: collapse;
+  background: #ffffff;
+}
+
+.dispatch-admin-table th,
+.dispatch-admin-table td {
+  padding: 13px 12px;
+  border-bottom: 1px solid #e2e8f0;
+  text-align: left;
+  vertical-align: middle;
+  font-size: 14px;
+}
+
+.dispatch-admin-table th {
+  color: #475569;
+  background: #f8fafc;
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.dispatch-admin-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.dispatch-admin-table small {
+  display: block;
+  margin-top: 4px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.dispatch-admin-code {
+  color: #0f2a43;
+  font-weight: 900;
+}
+
+.dispatch-admin-badge,
+.dispatch-admin-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.dispatch-admin-badge {
+  color: #0f2a43;
+  background: #e8eef5;
+}
+
+.dispatch-admin-status--scheduled {
+  color: #075985;
+  background: #e0f2fe;
+}
+
+.dispatch-admin-status--checkin {
+  color: #6d28d9;
+  background: #ede9fe;
+}
+
+.dispatch-admin-status--flying {
+  color: #1d4ed8;
+  background: #dbeafe;
+}
+
+.dispatch-admin-status--landed,
+.dispatch-admin-status--completed {
+  color: #047857;
+  background: #d1fae5;
+}
+
+.dispatch-admin-status--delayed {
+  color: #92400e;
+  background: #fef3c7;
+}
+
+.dispatch-admin-status--cancelled {
+  color: #991b1b;
+  background: #fee2e2;
+}
+
+.dispatch-admin-actions button,
+.dispatch-admin-modal__header button {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  color: #0f2a43;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.dispatch-admin-actions button:hover,
+.dispatch-admin-modal__header button:hover {
+  border-color: #0f2a43;
+  background: #f8fafc;
+}
+
+.dispatch-admin-actions button[title="Xem chi tiết"] {
+  color: #0369a1;
+  background: #f0f9ff;
+  border-color: #bae6fd;
+}
+
+.dispatch-admin-actions button[title="Cập nhật tình hình"] {
+  color: #0f766e;
+  background: #ccfbf1;
+  border-color: #99f6e4;
+}
+
+.dispatch-admin-actions button[title="Phân công cổng"],
+.dispatch-admin-actions button[title="Phân công băng chuyền"] {
+  color: #4338ca;
+  background: #eef2ff;
+  border-color: #c7d2fe;
+}
+
+.dispatch-admin-actions .dispatch-admin-actions__danger {
+  color: #b91c1c;
+}
+
+.dispatch-admin-state {
+  min-height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #64748b;
+  background: #ffffff;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.dispatch-admin-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.dispatch-admin-modal {
+  width: min(900px, 100%);
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.28);
+}
+
+.dispatch-admin-modal--wide {
+  width: min(1040px, 100%);
+}
+
+.dispatch-admin-modal__header,
+.dispatch-admin-modal__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+}
+
+.dispatch-admin-modal__header {
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.dispatch-admin-modal__header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.dispatch-admin-modal__body {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  padding: 18px;
+}
+
+.dispatch-admin-modal__footer {
+  justify-content: flex-end;
+  border-top: 1px solid #e2e8f0;
+}
+
+.dispatch-admin-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+  padding: 18px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.dispatch-admin-summary div,
+.dispatch-admin-detail-item,
+.dispatch-admin-list article {
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.dispatch-admin-summary span,
+.dispatch-admin-detail-item span {
+  display: block;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.dispatch-admin-summary strong,
+.dispatch-admin-detail-item strong {
+  display: block;
+  margin-top: 6px;
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.dispatch-admin-warning,
+.dispatch-admin-info {
+  grid-column: 1 / -1;
+}
+
+.dispatch-admin-detail {
+  padding: 18px;
+}
+
+.dispatch-admin-detail section + section {
+  margin-top: 20px;
+}
+
+.dispatch-admin-detail h3 {
+  margin: 0 0 12px;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.dispatch-admin-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.dispatch-admin-list {
+  display: grid;
+  gap: 10px;
+}
+
+.dispatch-admin-list strong {
+  color: #0f172a;
+  font-size: 14px;
+}
+
+.dispatch-admin-list p,
+.dispatch-admin-list span,
+.dispatch-admin-empty-text {
+  margin: 6px 0 0;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.dispatch-admin-delete {
+  display: grid;
+  gap: 14px;
+  padding: 20px 18px;
+  text-align: center;
+}
+
+.dispatch-admin-delete i {
+  color: #b91c1c;
+  font-size: 28px;
+}
+
+.dispatch-admin-delete p {
+  margin: 0;
+  color: #0f172a;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+@media (max-width: 1320px) {
+  .dispatch-admin-filters {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .dispatch-admin-field--wide,
+  .dispatch-admin-filter-actions {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 980px) {
+  .dispatch-admin-stats,
+  .dispatch-admin-detail-grid,
+  .dispatch-admin-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .dispatch-admin-header,
+  .dispatch-admin-panel__header,
+  .dispatch-admin-filter-actions,
+  .dispatch-admin-modal__footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .dispatch-admin-stats,
+  .dispatch-admin-filters,
+  .dispatch-admin-modal__body,
+  .dispatch-admin-detail-grid,
+  .dispatch-admin-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .dispatch-admin-button {
+    width: 100%;
+  }
+}

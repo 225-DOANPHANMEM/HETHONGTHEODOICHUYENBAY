@@ -1,0 +1,37 @@
+package com.danangairport.dto;
+
+public record LichTrinhDieuPhoiDto(
+        String maLichTrinh,
+        String maChuyenBay,
+        String soHieuChuyenBay,
+        String tenHangHangKhong,
+        String loaiChuyenBay,
+        String diemDi,
+        String diemDen,
+        String ngayBay,
+        String gioDuKienKhoiHanh,
+        String gioDuKienHaCanh,
+        String gioUocTinhKhoiHanh,
+        String gioUocTinhHaCanh,
+        String gioThucTeKhoiHanh,
+        String gioThucTeHaCanh,
+        String trangThaiHienTai,
+        Integer soPhutCham,
+        String lyDoChamHoacHuy,
+        String maPhanCongCong,
+        String maCong,
+        String tenCong,
+        String tenNhaGaCong,
+        String trangThaiCong,
+        String thoiGianBatDauSuDungCong,
+        String thoiGianKetThucSuDungCong,
+        String maPhanCongBangChuyen,
+        String maBangChuyenHanhLy,
+        String tenBangChuyenHanhLy,
+        String tenNhaGaBangChuyen,
+        String trangThaiBangChuyen,
+        String thoiGianBatDauSuDungBangChuyen,
+        String thoiGianKetThucSuDungBangChuyen,
+        String trangThaiDieuPhoi
+) {
+}
