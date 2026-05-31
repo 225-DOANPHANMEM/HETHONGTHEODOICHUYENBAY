@@ -6,6 +6,8 @@
 YÊU CẦU PHẦN MỀM
 -----------------
   - Node.js >= 18          (https://nodejs.org)
+  - Java JDK 23
+  - Maven >= 3.9
   - SQL Server 2022        (đã cài sẵn)
   - SQL Server Management Studio (SSMS) 20
   - Git (để clone project)
@@ -50,20 +52,29 @@ BƯỚC 2 — Bật SQL Server Authentication (Mixed Mode)
   5. Restart SQL Server service (như Bước 1, mục 6)
 
 
-BƯỚC 3 — Tạo database từ file SQL
+BƯỚC 3 — Kiểm tra database trên SQL Server
 ----------------------------------
-  1. Trong SSMS, mở file: Nhom6_tuan8.sql
-     (nằm ở thư mục gốc của project)
+  1. Mở SSMS và kết nối vào SQL Server đang dùng cho project.
 
-  2. Bấm Execute (F5) để chạy toàn bộ script
+  2. Kiểm tra database "QL_ChuyenBay_DaNang" đã tồn tại
+     trong Object Explorer.
 
-  3. Kiểm tra: database "QL_ChuyenBay_DaNang" đã xuất hiện
-     trong Object Explorer
+  3. Nếu database chưa có, khôi phục/tạo database từ nguồn dữ liệu SQL Server
+     của nhóm trước khi chạy backend.
 
 
-BƯỚC 4 — Tạo tài khoản SQL cho Backend
+BƯỚC 4 — Kiểm tra tài khoản SQL cho Backend
 ----------------------------------------
-  Trong SSMS, mở New Query và chạy lệnh sau:
+  Cấu hình hiện tại đang dùng tài khoản SQL Server:
+
+    User     : sa
+    Password : kin2112005
+
+  Nếu máy bạn dùng tài khoản khác, cập nhật đồng thời:
+    - Backend/db.js
+    - Backend/src/main/resources/application.properties
+
+  Nếu muốn dùng tài khoản riêng thay cho sa, trong SSMS có thể tạo login:
 
   USE master;
   CREATE LOGIN airport_user WITH PASSWORD = 'Airport@2026';
@@ -74,7 +85,7 @@ BƯỚC 4 — Tạo tài khoản SQL cho Backend
   ALTER ROLE db_datawriter ADD MEMBER airport_user;
   GRANT EXECUTE TO airport_user;
 
-  Bấm Execute (F5)
+  Sau đó đổi DB_USER/DB_PASSWORD cho Express và spring.datasource.username/password cho Spring Boot.
 
 
 ================================================================
@@ -85,7 +96,7 @@ BƯỚC 5 — Cài dependencies (chỉ làm 1 lần sau khi clone)
 ---------------------------------------------------------
   Mở terminal (VS Code: Ctrl + `)
 
-  Terminal 1 — Backend:
+  Terminal 1 — Backend Express (Staff/Customer):
     cd Backend
     npm install
 
@@ -96,20 +107,34 @@ BƯỚC 5 — Cài dependencies (chỉ làm 1 lần sau khi clone)
 
 BƯỚC 6 — Khởi động Backend
 ----------------------------
-  Mở terminal, chạy:
+  Hệ thống hiện dùng 2 backend:
+    - Spring Boot port 8080: phục vụ cổng Admin
+    - Express port 3001: phục vụ cổng Nhân viên và Khách hàng
+
+  Terminal 1 — Spring Boot:
+
+    cd Backend
+    mvn spring-boot:run
+
+  Kết quả thành công:
+    Spring Boot chạy tại http://localhost:8080
+    Health check: http://localhost:8080/api/health
+
+  Terminal 2 — Express:
 
     cd Backend
     npm run dev
 
   Kết quả thành công:
-    Backend đang chạy tại http://localhost:3001
+    Express backend chạy tại http://localhost:3001
+    Health check: http://localhost:3001/api/health
 
-  ⚠ Giữ terminal này mở trong suốt quá trình làm việc
+  ⚠ Giữ cả 2 terminal backend mở trong suốt quá trình làm việc
 
 
 BƯỚC 7 — Khởi động Frontend
 -----------------------------
-  Mở terminal MỚI (không đóng terminal Backend), chạy:
+  Mở terminal MỚI (không đóng 2 terminal Backend), chạy:
 
     cd Frontend
     npm run dev
@@ -147,11 +172,17 @@ BƯỚC 7 — Khởi động Frontend
     Server   : localhost
     Port     : 1433
     Database : QL_ChuyenBay_DaNang
-    User     : airport_user
-    Password : Airport@2026
+    User     : sa
+    Password : kin2112005
 
-  Nếu chạy trên máy khác, thay "localhost" bằng IP của máy
-  chạy SQL Server và đảm bảo port 1433 không bị firewall chặn.
+  Backend Express có thể đổi cấu hình bằng biến môi trường:
+    DB_SERVER, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD
+
+  Backend Spring Boot đổi trong file:
+    Backend/src/main/resources/application.properties
+
+  Nếu chạy trên máy khác, thay "localhost" bằng IP của máy chạy SQL Server
+  và đảm bảo port 1433 không bị firewall chặn.
 
 
 ================================================================
@@ -168,13 +199,14 @@ BƯỚC 7 — Khởi động Frontend
   → Chưa bật SQL Server Authentication (Mixed Mode)
   → Làm lại Bước 2
 
-  Lỗi: "Login failed for user 'airport_user'"
+  Lỗi: "Login failed for user 'sa'"
   → Chưa tạo login hoặc sai mật khẩu
-  → Làm lại Bước 4
+  → Kiểm tra lại mật khẩu trong Backend/db.js và application.properties,
+    hoặc đặt biến môi trường DB_USER/DB_PASSWORD cho Express
 
   Lỗi: "Cannot open database QL_ChuyenBay_DaNang"
-  → Chưa chạy file SQL hoặc chạy bị lỗi
-  → Làm lại Bước 3
+  → Database chưa tồn tại hoặc tài khoản SQL chưa được cấp quyền truy cập
+  → Kiểm tra lại Bước 3 và Bước 4
 
   Lỗi Frontend: "localhost refused to connect"
   → Backend chưa chạy

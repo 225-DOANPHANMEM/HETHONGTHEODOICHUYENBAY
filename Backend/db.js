@@ -1,11 +1,11 @@
 const sql = require("mssql");
 
 const config = {
-  server: "localhost",
-  database: "QL_ChuyenBay_DaNang",
-  port: 1433,                      // port cố định sau khi đã set trong Configuration Manager
-  user: "airport_user",            // SQL Server login
-  password: "Airport@2026",
+  server: process.env.DB_SERVER || "localhost",
+  database: process.env.DB_NAME || "QL_ChuyenBay_DaNang",
+  port: Number(process.env.DB_PORT || 1433),
+  user: process.env.DB_USER || "sa",
+  password: process.env.DB_PASSWORD || "kin2112005",
   options: {
     trustServerCertificate: true,
     enableArithAbort: true,

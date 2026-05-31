@@ -23,8 +23,8 @@ Server chạy tại: **http://localhost:3001**
 
 - Node.js >= 18
 - SQL Server đang chạy với instance: `LAPTOP-FILDQM8N\MSSQLSERVER01`
-- Database `QL_ChuyenBay_DaNang` đã được tạo (chạy file `Nhom6_tuan8.sql`)
-- Windows Authentication (không cần username/password SQL)
+- Database `QL_ChuyenBay_DaNang` đã tồn tại trên SQL Server
+- SQL Server Authentication đang bật. Mặc định Express dùng `sa/kin2112005`, hoặc có thể đổi bằng biến môi trường `DB_SERVER`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`.
 
 ---
 

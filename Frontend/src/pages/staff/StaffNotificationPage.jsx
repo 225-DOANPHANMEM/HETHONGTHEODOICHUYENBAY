@@ -2,6 +2,10 @@ import { useMemo, useState } from "react";
 import { addStaffHistory, getStatusLabel, loadStaffFlights } from "../../data/staffData.js";
 import "../../styles/staff/StaffPages.css";
 
+function makeMessage(flight) {
+  return `Thông báo: Chuyến bay ${flight.flightNo} của ${flight.airline} từ ${flight.from} đến ${flight.to} hiện có trạng thái ${getStatusLabel(flight.status)}. Giờ dự kiến: ${flight.type === "DEN" ? flight.estimatedArrival : flight.estimatedDeparture}. Gate: ${flight.gate || "--"}. Vui lòng theo dõi thông tin mới nhất từ sân bay.`;
+}
+
 function StaffNotificationPage() {
   const flights = loadStaffFlights();
   const [flightNo, setFlightNo] = useState(flights[0]?.flightNo || "");
@@ -9,10 +13,6 @@ function StaffNotificationPage() {
   const [channels, setChannels] = useState({ sms: true, email: true, push: true });
   const [content, setContent] = useState(() => selectedFlight ? makeMessage(selectedFlight) : "");
   const [logs, setLogs] = useState([]);
-
-  function makeMessage(flight) {
-    return `Thông báo: Chuyến bay ${flight.flightNo} của ${flight.airline} từ ${flight.from} đến ${flight.to} hiện có trạng thái ${getStatusLabel(flight.status)}. Giờ dự kiến: ${flight.type === "DEN" ? flight.estimatedArrival : flight.estimatedDeparture}. Gate: ${flight.gate || "--"}. Vui lòng theo dõi thông tin mới nhất từ sân bay.`;
-  }
 
   function handleFlightChange(value) {
     setFlightNo(value);
